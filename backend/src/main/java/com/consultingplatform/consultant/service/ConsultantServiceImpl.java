@@ -5,9 +5,12 @@ import com.consultingplatform.booking.domain.Booking;
 import com.consultingplatform.booking.repository.BookingRepository;
 import com.consultingplatform.consultant.domain.AvailabilitySlot;
 import com.consultingplatform.consultant.repository.AvailabilitySlotRepository;
+import com.consultingplatform.service.domain.ConsultingService;
+import com.consultingplatform.service.repository.ConsultingServiceRepository;
 import com.consultingplatform.consultant.web.dto.*;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -16,17 +19,44 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final BookingRepository bookingRepository;
+    private final ConsultingServiceRepository consultingServiceRepository;
 
     public ConsultantServiceImpl(AvailabilitySlotRepository availabilitySlotRepository,
-                                 BookingRepository bookingRepository) {
+                                 BookingRepository bookingRepository,
+                                 ConsultingServiceRepository consultingServiceRepository) {
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.bookingRepository = bookingRepository;
+        this.consultingServiceRepository = consultingServiceRepository;
     }
 
     @Override
     public AvailabilitySlotResponse createAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request) {
+        ConsultingService consultingService = consultingServiceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
+
+        boolean serviceIsActive = Boolean.TRUE.equals(consultingService.getIsActive());
+        if (!serviceIsActive) {
+            throw new IllegalStateException("Consulting service is inactive");
+        }
+
+        boolean serviceBelongsToConsultant = consultingService.getConsultantId().equals(consultantId);
+        if (!serviceBelongsToConsultant) {
+            throw new IllegalStateException("Consultant can only add slots for their own services");
+        }
+
+        if (consultingService.getDurationMinutes() == null || consultingService.getDurationMinutes() <= 0) {
+            throw new IllegalStateException("Consulting service has invalid duration");
+        }
+
         if (!request.getEndAt().isAfter(request.getStartAt())) {
             throw new IllegalStateException("end_at must be after start_at");
+        }
+
+        Duration requestedDuration = Duration.between(request.getStartAt(), request.getEndAt());
+        Duration serviceDuration = Duration.ofMinutes(consultingService.getDurationMinutes());
+        boolean slotMatchesServiceDuration = requestedDuration.equals(serviceDuration);
+        if (!slotMatchesServiceDuration) {
+            throw new IllegalStateException("Availability slot duration must match service duration");
         }
 
         boolean overlapping = availabilitySlotRepository.existsOverlappingSlot(
@@ -37,6 +67,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
         AvailabilitySlot slot = new AvailabilitySlot();
         slot.setConsultantId(consultantId);
+        slot.setServiceId(request.getServiceId());
         slot.setStartAt(request.getStartAt());
         slot.setEndAt(request.getEndAt());
         slot.setIsAvailable(true);
@@ -114,7 +145,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     private AvailabilitySlotResponse toSlotResponse(AvailabilitySlot slot) {
         return new AvailabilitySlotResponse(
-                slot.getId(), slot.getConsultantId(), slot.getStartAt(),
+                slot.getId(), slot.getConsultantId(), slot.getServiceId(), slot.getStartAt(),
                 slot.getEndAt(), slot.getIsAvailable(), slot.getCreatedAt());
     }
 
