@@ -47,4 +47,14 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+<<<<<<< Updated upstream
+=======
+
+    
+
+    // Abstract methods from class diagram
+    public abstract boolean login();
+    
+    public abstract void logout();
+>>>>>>> Stashed changes
 }

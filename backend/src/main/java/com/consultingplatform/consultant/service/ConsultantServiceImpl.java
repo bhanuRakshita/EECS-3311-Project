@@ -6,8 +6,11 @@ import com.consultingplatform.booking.repository.BookingRepository;
 import com.consultingplatform.consultant.domain.AvailabilitySlot;
 import com.consultingplatform.consultant.repository.AvailabilitySlotRepository;
 import com.consultingplatform.consultant.web.dto.*;
+import com.consultingplatform.service.domain.ConsultingService;
+import com.consultingplatform.service.repository.ConsultingServiceRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -16,17 +19,31 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final BookingRepository bookingRepository;
+    private final ConsultingServiceRepository consultingServiceRepository;
 
     public ConsultantServiceImpl(AvailabilitySlotRepository availabilitySlotRepository,
-                                 BookingRepository bookingRepository) {
+                                 BookingRepository bookingRepository,
+                                 ConsultingServiceRepository consultingServiceRepository) {
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.bookingRepository = bookingRepository;
+        this.consultingServiceRepository = consultingServiceRepository;
     }
 
     @Override
     public AvailabilitySlotResponse createAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request) {
         if (!request.getEndAt().isAfter(request.getStartAt())) {
             throw new IllegalStateException("end_at must be after start_at");
+        }
+
+        ConsultingService service = consultingServiceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
+        if (!service.getConsultantId().equals(consultantId) || !Boolean.TRUE.equals(service.getIsActive())) {
+            throw new IllegalStateException("Service is not provided by this consultant");
+        }
+
+        Duration slotDuration = Duration.between(request.getStartAt(), request.getEndAt());
+        if (!slotDuration.equals(Duration.ofMinutes(service.getDurationMinutes()))) {
+            throw new IllegalStateException("Availability slot duration must match service duration");
         }
 
         boolean overlapping = availabilitySlotRepository.existsOverlappingSlot(
@@ -37,6 +54,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
         AvailabilitySlot slot = new AvailabilitySlot();
         slot.setConsultantId(consultantId);
+        slot.setServiceId(service.getId());
         slot.setStartAt(request.getStartAt());
         slot.setEndAt(request.getEndAt());
         slot.setIsAvailable(true);
@@ -114,7 +132,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     private AvailabilitySlotResponse toSlotResponse(AvailabilitySlot slot) {
         return new AvailabilitySlotResponse(
-                slot.getId(), slot.getConsultantId(), slot.getStartAt(),
+                slot.getId(), slot.getConsultantId(), slot.getServiceId(), slot.getStartAt(),
                 slot.getEndAt(), slot.getIsAvailable(), slot.getCreatedAt());
     }
 

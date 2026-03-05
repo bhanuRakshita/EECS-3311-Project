@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS consulting_services (
 CREATE TABLE IF NOT EXISTS consultant_availability_slots (
     id BIGSERIAL PRIMARY KEY,
     consultant_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    service_id BIGINT NOT NULL REFERENCES consulting_services(id) ON DELETE RESTRICT,
     start_at TIMESTAMPTZ NOT NULL,
     end_at TIMESTAMPTZ NOT NULL,
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
