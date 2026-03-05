@@ -56,6 +56,12 @@ public class Booking {
     @Column(name = "completed_at")
     private OffsetDateTime completedAt;
 
+    @Column(name = "consultant_decided_at")
+    private OffsetDateTime consultantDecidedAt;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     // State Pattern: transient field (not stored in DB)
     @Transient
     private BookingState state;
