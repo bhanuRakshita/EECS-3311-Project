@@ -74,9 +74,6 @@ public class UserServiceImpl implements UserService {
         if (userData.containsKey("email")) {
             user.setEmail((String) userData.get("email"));
         }
-        if (userData.containsKey("fullName")) {
-            user.setFullName((String) userData.get("fullName"));
-        }
         if (userData.containsKey("firstName")) {
             user.setFirstName((String) userData.get("firstName"));
         }
@@ -125,7 +122,6 @@ public class UserServiceImpl implements UserService {
     private void setCommonFields(User user, Map<String, Object> data) {
         user.setEmail((String) data.get("email"));
         user.setPasswordHash((String) data.get("passwordHash"));
-        user.setFullName((String) data.get("fullName"));
         user.setFirstName((String) data.get("firstName"));
         user.setLastName((String) data.get("lastName"));
         user.setPhoneNumber((String) data.get("phoneNumber"));

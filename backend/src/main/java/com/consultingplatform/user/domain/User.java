@@ -24,9 +24,6 @@ public abstract class User {
     @Column(name = "password_hash")
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
@@ -46,6 +43,22 @@ public abstract class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    /**
+     * Computed full name from first and last name
+     */
+    public String getFullName() {
+        if (firstName == null && lastName == null) {
+            return null;
+        }
+        if (firstName == null) {
+            return lastName;
+        }
+        if (lastName == null) {
+            return firstName;
+        }
+        return firstName + " " + lastName;
+    }
 
     // Abstract methods from class diagram
     public abstract boolean login();
