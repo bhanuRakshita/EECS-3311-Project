@@ -1,4 +1,4 @@
-package com.consultingplatform.model.enums;
+package com.consultingplatform.payment.domain;
 
 public enum PaymentType {
     CREDIT_CARD,

@@ -1,15 +1,15 @@
-package com.consultingplatform.service;
+package com.consultingplatform.payment.service;
 
-import com.consultingplatform.dto.PaymentMethodDto;
-import com.consultingplatform.dto.PaymentResponseDto;
-import com.consultingplatform.dto.ProcessPaymentRequest;
-import com.consultingplatform.model.enums.PaymentStatus;
-import com.consultingplatform.model.enums.PaymentType;
-import com.consultingplatform.model.payment.Payment;
-import com.consultingplatform.model.payment.PaymentMethod;
-import com.consultingplatform.model.payment.PaymentStrategy;
-import com.consultingplatform.repository.PaymentMethodRepository;
-import com.consultingplatform.repository.PaymentRepository;
+import com.consultingplatform.payment.domain.Payment;
+import com.consultingplatform.payment.domain.PaymentMethod;
+import com.consultingplatform.payment.domain.PaymentStatus;
+import com.consultingplatform.payment.domain.PaymentStrategy;
+import com.consultingplatform.payment.domain.PaymentType;
+import com.consultingplatform.payment.repository.PaymentMethodRepository;
+import com.consultingplatform.payment.repository.PaymentRepository;
+import com.consultingplatform.payment.web.dto.PaymentMethodDto;
+import com.consultingplatform.payment.web.dto.PaymentResponseDto;
+import com.consultingplatform.payment.web.dto.ProcessPaymentRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

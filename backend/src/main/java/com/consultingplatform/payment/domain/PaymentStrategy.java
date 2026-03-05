@@ -1,4 +1,4 @@
-package com.consultingplatform.model.payment;
+package com.consultingplatform.payment.domain;
 
 public interface PaymentStrategy {
 

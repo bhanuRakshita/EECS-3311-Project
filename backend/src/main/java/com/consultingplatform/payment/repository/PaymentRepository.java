@@ -1,7 +1,7 @@
-package com.consultingplatform.repository;
+package com.consultingplatform.payment.repository;
 
-import com.consultingplatform.model.payment.Payment;
-import com.consultingplatform.model.enums.PaymentStatus;
+import com.consultingplatform.payment.domain.Payment;
+import com.consultingplatform.payment.domain.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

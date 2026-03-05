@@ -1,7 +1,5 @@
-package com.consultingplatform.model.payment;
+package com.consultingplatform.payment.domain;
 
-import com.consultingplatform.model.enums.PaymentStatus;
-import com.consultingplatform.model.enums.PaymentType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -9,18 +7,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Concrete strategy for PayPal payments.
- * Fields from class diagram: email
- * Method from class diagram: validateEmail()
- */
 @Data
 @AllArgsConstructor
 public class PayPalPayment implements PaymentStrategy {
 
     private String email;
 
-    // Checks that the email has a valid format: something@something.something
     public boolean validateEmail() {
         if (email == null || email.trim().isEmpty()) {
             return false;
@@ -30,7 +22,6 @@ public class PayPalPayment implements PaymentStrategy {
         int atIndex = trimmed.indexOf("@");
         int lastDotIndex = trimmed.lastIndexOf(".");
 
-        // Must have @ and a dot after the @
         return atIndex > 0 && lastDotIndex > atIndex + 1 && lastDotIndex < trimmed.length() - 1;
     }
 

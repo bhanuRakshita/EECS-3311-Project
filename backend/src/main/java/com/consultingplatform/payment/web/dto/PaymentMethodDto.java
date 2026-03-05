@@ -1,4 +1,4 @@
-package com.consultingplatform.dto;
+package com.consultingplatform.payment.web.dto;
 
 import lombok.*;
 

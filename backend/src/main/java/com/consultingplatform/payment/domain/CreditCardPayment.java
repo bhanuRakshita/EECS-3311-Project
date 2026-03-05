@@ -1,7 +1,5 @@
-package com.consultingplatform.model.payment;
+package com.consultingplatform.payment.domain;
 
-import com.consultingplatform.model.enums.PaymentStatus;
-import com.consultingplatform.model.enums.PaymentType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -10,63 +8,45 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Concrete strategy for debit card payments.
- * Same validation rules as credit card per spec.
- * Fields from class diagram: cardNumber, expiryDate, cvv
- * Method from class diagram: validateCard()
- */
 @Data
 @AllArgsConstructor
-public class DebitCardPayment implements PaymentStrategy {
+public class CreditCardPayment implements PaymentStrategy {
 
     private String cardNumber;
-    private String expiryDate;  // format: MM/YY
+    private String expiryDate;
     private String cvv;
 
-    // Checks card number (16 digits), expiry (not past), CVV (3-4 digits)
     public boolean validateCard() {
         if (cardNumber == null || cvv == null || expiryDate == null) {
             return false;
         }
-
-        // Remove spaces and check for 16 digits
         String cleanCard = cardNumber.replaceAll(" ", "");
         if (!cleanCard.matches("\\d{16}")) {
             return false;
         }
-
-        // CVV must be 3 or 4 digits
         String cleanCvv = cvv.trim();
         if (!cleanCvv.matches("\\d{3,4}")) {
             return false;
         }
-
         return isNotExpired(expiryDate);
     }
 
-    // Returns true if the card is still valid (month/year is current or future)
     private boolean isNotExpired(String expiry) {
         if (expiry == null || !expiry.contains("/")) {
             return false;
         }
-
         String[] parts = expiry.trim().split("/");
         if (parts.length != 2) {
             return false;
         }
-
         try {
             int month = Integer.parseInt(parts[0]);
             int year = 2000 + Integer.parseInt(parts[1]);
-
             if (month < 1 || month > 12) {
                 return false;
             }
-
             LocalDate now = LocalDate.now();
             return year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue());
-
         } catch (NumberFormatException e) {
             return false;
         }
@@ -93,6 +73,6 @@ public class DebitCardPayment implements PaymentStrategy {
 
     @Override
     public String getPaymentType() {
-        return PaymentType.DEBIT_CARD.name();
+        return PaymentType.CREDIT_CARD.name();
     }
 }

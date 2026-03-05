@@ -1,6 +1,6 @@
-package com.consultingplatform.repository;
+package com.consultingplatform.payment.repository;
 
-import com.consultingplatform.model.payment.PaymentMethod;
+import com.consultingplatform.payment.domain.PaymentMethod;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

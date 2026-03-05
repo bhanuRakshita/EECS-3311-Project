@@ -1,6 +1,5 @@
-package com.consultingplatform.model.payment;
+package com.consultingplatform.payment.domain;
 
-import com.consultingplatform.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

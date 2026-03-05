@@ -1,10 +1,10 @@
-package com.consultingplatform.controller;
+package com.consultingplatform.payment.web;
 
-import com.consultingplatform.dto.PaymentMethodDto;
-import com.consultingplatform.dto.PaymentResponseDto;
-import com.consultingplatform.dto.ProcessPaymentRequest;
-import com.consultingplatform.model.payment.PaymentMethod;
-import com.consultingplatform.service.PaymentService;
+import com.consultingplatform.payment.domain.PaymentMethod;
+import com.consultingplatform.payment.service.PaymentService;
+import com.consultingplatform.payment.web.dto.PaymentMethodDto;
+import com.consultingplatform.payment.web.dto.PaymentResponseDto;
+import com.consultingplatform.payment.web.dto.ProcessPaymentRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,13 +1,13 @@
-package com.consultingplatform.service;
+package com.consultingplatform.payment.service;
 
-import com.consultingplatform.dto.PaymentMethodDto;
-import com.consultingplatform.model.enums.PaymentType;
-import com.consultingplatform.model.payment.BankTransferPayment;
-import com.consultingplatform.model.payment.CreditCardPayment;
-import com.consultingplatform.model.payment.DebitCardPayment;
-import com.consultingplatform.model.payment.PayPalPayment;
-import com.consultingplatform.model.payment.PaymentMethod;
-import com.consultingplatform.model.payment.PaymentStrategy;
+import com.consultingplatform.payment.domain.BankTransferPayment;
+import com.consultingplatform.payment.domain.CreditCardPayment;
+import com.consultingplatform.payment.domain.DebitCardPayment;
+import com.consultingplatform.payment.domain.PayPalPayment;
+import com.consultingplatform.payment.domain.PaymentMethod;
+import com.consultingplatform.payment.domain.PaymentStrategy;
+import com.consultingplatform.payment.domain.PaymentType;
+import com.consultingplatform.payment.web.dto.PaymentMethodDto;
 import org.springframework.stereotype.Service;
 
 @Service
