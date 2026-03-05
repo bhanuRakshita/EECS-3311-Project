@@ -24,6 +24,12 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public Booking getBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+    }
+
+    @Override
     public Booking cancelBooking(Long bookingId) {
 
         Booking booking = bookingRepository.findById(bookingId)

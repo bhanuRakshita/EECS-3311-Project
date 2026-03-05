@@ -22,13 +22,18 @@ public class BookingController {
         return bookingService.requestBooking(booking);
     }
 
+    @GetMapping("/{id}")
+    public Booking getBookingById(@PathVariable Long id) {
+        return bookingService.getBookingById(id);
+    }
+
     @PutMapping("/{id}/cancel")
     public Booking cancelBooking(@PathVariable Long id) {
         return bookingService.cancelBooking(id);
     }
 
     @GetMapping("/client/{clientId}")
-    public List<Booking> getBookings(@PathVariable Long clientId) {
+    public List<Booking> getClientBookings(@PathVariable Long clientId) {
         return bookingService.getClientBookings(clientId);
     }
 }
