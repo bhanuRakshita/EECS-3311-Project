@@ -18,6 +18,9 @@ public class AvailabilitySlot {
     @Column(name = "consultant_id", nullable = false)
     private Long consultantId;
 
+    @Column(name = "service_id", nullable = false)
+    private Long serviceId;
+
     @Column(name = "start_at", nullable = false)
     private OffsetDateTime startAt;
 
