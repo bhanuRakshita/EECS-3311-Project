@@ -10,39 +10,17 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Client extends User {
 
-    // From class diagram: bookingHistory and paymentMethods
-    // These are managed via relationships, not stored directly
-    
-    // Methods from class diagram
-    public void createBooking() {
-        // Implementation delegated to BookingService
-    }
-    
-    public void cancelBooking(Long bookingId) {
-        // Implementation delegated to BookingService
-    }
-    
-    public void viewBookingHistory() {
-        // Implementation delegated to BookingService
-    }
-    
-    public void processPayment(String paymentDetails) {
-        // Implementation delegated to PaymentService
-    }
-    
-    public void addPaymentMethod(String paymentMethod) {
-        // Implementation delegated to PaymentService
-    }
+    // No client-specific fields
+    // Business logic handled by Booking and Payment modules
 
     @Override
     public boolean login() {
-        // Basic login check - could be enhanced with authentication
         return this.getAccountStatus() != null && 
                this.getAccountStatus().equals("ACTIVE");
     }
 
     @Override
     public void logout() {
-        // Logout logic - typically handled by security framework
+        // Logout logic handled by security framework
     }
 }

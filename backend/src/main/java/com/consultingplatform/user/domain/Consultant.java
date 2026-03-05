@@ -10,27 +10,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Consultant extends User {
 
-    // From class diagram: availability, services, rating, isApproved
-    // availability and services are managed via relationships in separate tables
-    
     @Column(name = "rating")
     private Double rating;
     
     @Column(name = "is_approved")
     private Boolean isApproved = false;
     
-    // Methods from class diagram
-    public void addTimeSlot() {
-        // Implementation delegated to AvailabilityService (consultant module)
-    }
-    
-    public void acceptBooking(Long bookingId) {
-        // Implementation delegated to BookingService
-    }
-    
-    public void rejectBooking(Long bookingId) {
-        // Implementation delegated to BookingService
-    }
+    // Business logic handled by Consultant module
 
     @Override
     public boolean login() {
@@ -43,6 +29,6 @@ public class Consultant extends User {
 
     @Override
     public void logout() {
-        // Logout logic - typically handled by security framework
+        // Logout logic handled by security framework
     }
 }
