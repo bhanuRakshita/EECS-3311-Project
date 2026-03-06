@@ -21,8 +21,15 @@ public class PaymentMethod {
     private Long clientId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "method_type", nullable = false)
     private PaymentType type;
+
+    // Backward-compatible mirror for legacy schema that still requires payment_methods.type.
+    @Column(name = "type")
+    private String legacyType;
+
+    @Column(name = "display_label", nullable = false)
+    private String displayLabel;
 
     private String last4Digits;
     private String expiryDate;
@@ -41,5 +48,34 @@ public class PaymentMethod {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (isDefault == null) isDefault = false;
+        syncLegacyType();
+        if (displayLabel == null || displayLabel.isBlank()) {
+            displayLabel = buildDisplayLabel();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        syncLegacyType();
+        if (displayLabel == null || displayLabel.isBlank()) {
+            displayLabel = buildDisplayLabel();
+        }
+    }
+
+    private void syncLegacyType() {
+        legacyType = (type != null) ? type.name() : null;
+    }
+
+    private String buildDisplayLabel() {
+        if ((type == PaymentType.CREDIT_CARD || type == PaymentType.DEBIT_CARD) && last4Digits != null && !last4Digits.isBlank()) {
+            return type.name() + " •••• " + last4Digits;
+        }
+        if (type == PaymentType.PAYPAL && paypalEmail != null && !paypalEmail.isBlank()) {
+            return "PAYPAL " + paypalEmail;
+        }
+        if (type == PaymentType.BANK_TRANSFER && last4AccountDigits != null && !last4AccountDigits.isBlank()) {
+            return "BANK_TRANSFER •••• " + last4AccountDigits;
+        }
+        return type != null ? type.name() : "PAYMENT_METHOD";
     }
 }

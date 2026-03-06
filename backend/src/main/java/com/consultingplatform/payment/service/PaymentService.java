@@ -26,13 +26,30 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMethodRepository paymentMethodRepository;
-    private final PaymentValidationService validationService;
     private final BookingRepository bookingRepository;
+    private final PaymentValidationService validationService;
 
     @Transactional
     public PaymentResponseDto processPayment(ProcessPaymentRequest request) throws InterruptedException {
         if (request.getBookingId() == null || request.getClientId() == null || request.getAmount() == null) {
             throw new IllegalArgumentException("bookingId, clientId, and amount are required");
+        }
+
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        if (!booking.getClientId().equals(request.getClientId())) {
+            throw new IllegalArgumentException("Booking does not belong to this client");
+        }
+
+        String currentStatus = booking.getStatus();
+        if (!"CONFIRMED".equals(currentStatus) && !"PENDING_PAYMENT".equals(currentStatus)) {
+            throw new IllegalArgumentException("Booking must be CONFIRMED or PENDING_PAYMENT before payment");
+        }
+
+        if ("CONFIRMED".equals(currentStatus)) {
+            booking.setStatus("PENDING_PAYMENT");
+            bookingRepository.save(booking);
         }
 
         PaymentStrategy strategy;
@@ -71,12 +88,11 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        // Update booking status to PAID after successful payment
-        Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + request.getBookingId()));
-        booking.processPayment();
-        bookingRepository.save(booking);
-        
+        if (payment.getStatus() == PaymentStatus.SUCCESS) {
+            booking.setStatus("PAID");
+            bookingRepository.save(booking);
+        }
+
         return toResponseDto(payment);
     }
 
@@ -140,9 +156,13 @@ public class PaymentService {
     public List<PaymentResponseDto> getPaymentHistoryByStatus(Long clientId, String status) {
         PaymentStatus paymentStatus;
         try {
-            paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
+            String normalized = status.toUpperCase();
+            if ("COMPLETED".equals(normalized)) {
+                normalized = "SUCCESS";
+            }
+            paymentStatus = PaymentStatus.valueOf(normalized);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid status. Valid values: PENDING, COMPLETED, FAILED, REFUNDED");
+            throw new IllegalArgumentException("Invalid status. Valid values: PENDING, SUCCESS, FAILED, REFUNDED (COMPLETED is accepted as alias for SUCCESS)");
         }
 
         List<Payment> payments = paymentRepository.findByClientIdAndStatusOrderByTimestampDesc(clientId, paymentStatus);

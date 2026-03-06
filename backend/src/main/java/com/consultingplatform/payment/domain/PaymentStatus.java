@@ -2,7 +2,7 @@ package com.consultingplatform.payment.domain;
 
 public enum PaymentStatus {
     PENDING,
-    COMPLETED,
+    SUCCESS,
     FAILED,
     REFUNDED
 }

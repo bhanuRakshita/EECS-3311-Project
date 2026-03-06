@@ -67,7 +67,7 @@ public class DebitCardPayment implements PaymentStrategy {
         payment.setAmount(BigDecimal.valueOf(amount));
         payment.setTimestamp(LocalDateTime.now());
         payment.setStrategyType(getPaymentType());
-        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setStatus(PaymentStatus.SUCCESS);
         return payment;
     }
 
