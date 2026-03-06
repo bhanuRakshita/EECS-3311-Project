@@ -3,6 +3,7 @@ package com.consultingplatform.booking.web;
 import com.consultingplatform.booking.domain.Booking;
 import com.consultingplatform.booking.service.BookingService;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,8 +19,13 @@ public class BookingController {
     }
 
     @PostMapping
-    public Booking requestBooking(@RequestBody Booking booking) {
-        return bookingService.requestBooking(booking);
+    public Booking requestBooking(@Valid @RequestBody BookingRequest request) {
+        return bookingService.requestBooking(request);
+    }
+
+    @GetMapping("/{id}")
+    public Booking getBookingById(@PathVariable Long id) {
+        return bookingService.getBookingById(id);
     }
 
     @PutMapping("/{id}/cancel")
@@ -28,7 +34,7 @@ public class BookingController {
     }
 
     @GetMapping("/client/{clientId}")
-    public List<Booking> getBookings(@PathVariable Long clientId) {
+    public List<Booking> getClientBookings(@PathVariable Long clientId) {
         return bookingService.getClientBookings(clientId);
     }
 }

@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS app_users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(320) NOT NULL,
     password_hash VARCHAR(255),
-    full_name VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
     account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS consulting_services (
 CREATE TABLE IF NOT EXISTS consultant_availability_slots (
     id BIGSERIAL PRIMARY KEY,
     consultant_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    service_id BIGINT NOT NULL REFERENCES consulting_services(id) ON DELETE CASCADE,
     start_at TIMESTAMPTZ NOT NULL,
     end_at TIMESTAMPTZ NOT NULL,
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
@@ -259,7 +261,7 @@ CREATE INDEX IF NOT EXISTS idx_consulting_services_consultant_active
     ON consulting_services (consultant_id, is_active);
 
 CREATE INDEX IF NOT EXISTS idx_availability_consultant_start
-    ON consultant_availability_slots (consultant_id, start_at);
+    ON consultant_availability_slots (consultant_id, service_id, start_at);
 
 CREATE INDEX IF NOT EXISTS idx_bookings_client_requested_at
     ON bookings (client_id, requested_at DESC);

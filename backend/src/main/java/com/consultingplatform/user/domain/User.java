@@ -9,8 +9,10 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "app_users")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "role", discriminatorType = DiscriminatorType.STRING)
 @Data
-public class User {
+public abstract class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,9 +24,6 @@ public class User {
     @Column(name = "password_hash")
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
@@ -33,9 +32,6 @@ public class User {
 
     @Column(name = "phone_number")
     private String phoneNumber;
-
-    @Column(nullable = false)
-    private String role;
 
     @Column(name = "account_status", nullable = false)
     private String accountStatus = "ACTIVE";
@@ -47,4 +43,25 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    /**
+     * Computed full name from first and last name
+     */
+    public String getFullName() {
+        if (firstName == null && lastName == null) {
+            return null;
+        }
+        if (firstName == null) {
+            return lastName;
+        }
+        if (lastName == null) {
+            return firstName;
+        }
+        return firstName + " " + lastName;
+    }
+
+    // Abstract methods from class diagram
+    public abstract boolean login();
+    
+    public abstract void logout();
 }
