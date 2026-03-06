@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 
 public class CreateConsultingServiceRequest {
 
+    private Long actorUserId;
+
     @NotBlank(message = "serviceType is required")
     private String serviceType;
 
@@ -27,6 +29,14 @@ public class CreateConsultingServiceRequest {
 
     public String getServiceType() {
         return serviceType;
+    }
+
+    public Long getActorUserId() {
+        return actorUserId;
+    }
+
+    public void setActorUserId(Long actorUserId) {
+        this.actorUserId = actorUserId;
     }
 
     public void setServiceType(String serviceType) {

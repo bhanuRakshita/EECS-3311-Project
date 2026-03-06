@@ -8,6 +8,11 @@ import com.consultingplatform.consultant.repository.AvailabilitySlotRepository;
 import com.consultingplatform.consultant.domain.ConsultingService;
 import com.consultingplatform.consultant.repository.ConsultingServiceRepository;
 import com.consultingplatform.consultant.web.dto.*;
+import com.consultingplatform.notification.service.NotificationService;
+
+import jakarta.transaction.Transactional;
+
+import com.consultingplatform.user.domain.Admin;
 import com.consultingplatform.user.domain.Consultant;
 import com.consultingplatform.user.domain.User;
 import com.consultingplatform.user.repository.UserRepository;
@@ -24,23 +29,27 @@ public class ConsultantServiceImpl implements ConsultantService {
     private final BookingRepository bookingRepository;
     private final ConsultingServiceRepository consultingServiceRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ConsultantServiceImpl(AvailabilitySlotRepository availabilitySlotRepository,
                                  BookingRepository bookingRepository,
                                  ConsultingServiceRepository consultingServiceRepository,
-                                 UserRepository userRepository) {
+                                 UserRepository userRepository,
+                                 NotificationService notificationService) {
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.bookingRepository = bookingRepository;
         this.consultingServiceRepository = consultingServiceRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
     public ConsultingService createConsultingService(Long consultantId, CreateConsultingServiceRequest request) {
         User user = userRepository.findById(consultantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Consultant not found"));
-        if (!(user instanceof Consultant)) {
-            throw new IllegalStateException("Provided id is not a consultant");
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean canCreateService = user instanceof Consultant || user instanceof Admin;
+        if (!canCreateService) {
+            throw new IllegalStateException("Only consultant or admin can create services");
         }
 
         ConsultingService service = new ConsultingService();
@@ -140,6 +149,7 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    @Transactional
     public ConsultantBookingResponse rejectBooking(Long consultantId, Long bookingId, BookingDecisionRequest request) {
         Booking booking = getBookingForConsultant(consultantId, bookingId);
         booking.reject();
@@ -147,7 +157,18 @@ public class ConsultantServiceImpl implements ConsultantService {
         if (request != null && request.getReason() != null) {
             booking.setRejectionReason(request.getReason());
         }
+
+        // Restore slot availability when booking is rejected
+        if (booking.getAvailabilitySlotId() != null) {
+            availabilitySlotRepository.findById(booking.getAvailabilitySlotId())
+                    .ifPresent(slot -> {
+                        slot.setIsAvailable(true);
+                        availabilitySlotRepository.save(slot);
+                    });
+        }
+
         Booking saved = bookingRepository.save(booking);
+        notificationService.sendBookingRejectedNotificationToClient(saved, saved.getRejectionReason());
         return toBookingResponse(saved);
     }
 
