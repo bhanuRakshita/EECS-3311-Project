@@ -10,8 +10,11 @@ import com.consultingplatform.admin.web.dto.ConsultantApprovalRequestDto;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalResponseDto;
 import com.consultingplatform.admin.web.dto.PolicyResponseDto;
 import com.consultingplatform.admin.web.dto.PolicyUpsertRequestDto;
+import com.consultingplatform.consultingservice.domain.ConsultingService;
+import com.consultingplatform.consultingservice.service.ConsultingServiceService;
 import com.consultingplatform.user.domain.Admin;
 import com.consultingplatform.user.repository.UserRepository;
+import com.consultingplatform.consultingservice.web.dto.ConsultingServiceDto;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -24,27 +27,41 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final ConsultantApprovalService consultantApprovalService;
     private final SystemPolicyService systemPolicyService;
     private final ConsultantRegistrationRepository consultantRegistrationRepository;
     private final UserRepository userRepository;
+    private final ConsultingServiceService consultingServiceService;
 
     public AdminController(
         ConsultantApprovalService consultantApprovalService,
         SystemPolicyService systemPolicyService,
         ConsultantRegistrationRepository consultantRegistrationRepository,
-        UserRepository userRepository
+        UserRepository userRepository,
+        ConsultingServiceService consultingServiceService
     ) {
         this.consultantApprovalService = consultantApprovalService;
         this.systemPolicyService = systemPolicyService;
         this.consultantRegistrationRepository = consultantRegistrationRepository;
         this.userRepository = userRepository;
+        this.consultingServiceService = consultingServiceService;
     }
+
+    // Endpoint for admins to create a new Consulting Service
+    @PostMapping("/services")
+    public ResponseEntity<ConsultingService> createConsultingService(@Valid @RequestBody ConsultingServiceDto serviceDto) {
+        ConsultingService createdService = consultingServiceService.createService(serviceDto);
+
+        return new ResponseEntity<>(createdService, HttpStatus.CREATED);
+    }
+
 
     @PostMapping("/consultants/{consultantId}/approval")
     public ResponseEntity<ConsultantApprovalResponseDto> approveOrRejectConsultant(

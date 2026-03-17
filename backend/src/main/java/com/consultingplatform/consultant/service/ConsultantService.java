@@ -1,15 +1,13 @@
 package com.consultingplatform.consultant.service;
 
-import com.consultingplatform.consultant.domain.ConsultingService;
 import com.consultingplatform.consultant.web.dto.*;
+import com.consultingplatform.consultingservice.domain.ConsultingService;
 
 import java.util.List;
 
 public interface ConsultantService {
 
-    ConsultingService createConsultingService(Long consultantId, CreateConsultingServiceRequest request);
-
-    AvailabilitySlotResponse createAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request);
+    AvailabilitySlotResponse addAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request);
 
     List<AvailabilitySlotResponse> getAvailabilitySlots(Long consultantId);
 

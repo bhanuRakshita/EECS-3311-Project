@@ -1,4 +1,4 @@
-package com.consultingplatform.consultant.domain;
+package com.consultingplatform.consultingservice.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -16,9 +16,6 @@ public class ConsultingService {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "consultant_id", nullable = false)
-    private Long consultantId;
 
     @Column(name = "service_type", nullable = false)
     private String serviceType;

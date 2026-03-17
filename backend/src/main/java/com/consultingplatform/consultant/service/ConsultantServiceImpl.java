@@ -5,13 +5,10 @@ import com.consultingplatform.booking.domain.Booking;
 import com.consultingplatform.booking.repository.BookingRepository;
 import com.consultingplatform.consultant.domain.AvailabilitySlot;
 import com.consultingplatform.consultant.repository.AvailabilitySlotRepository;
-import com.consultingplatform.consultant.domain.ConsultingService;
-import com.consultingplatform.consultant.repository.ConsultingServiceRepository;
 import com.consultingplatform.consultant.web.dto.*;
+import com.consultingplatform.consultingservice.domain.ConsultingService;
+import com.consultingplatform.consultingservice.repository.ConsultingServiceRepository;
 import com.consultingplatform.notification.service.NotificationService;
-import com.consultingplatform.user.domain.Admin;
-import com.consultingplatform.user.domain.Consultant;
-import com.consultingplatform.user.domain.User;
 
 import jakarta.transaction.Transactional;
 
@@ -44,37 +41,21 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
-    public ConsultingService createConsultingService(Long consultantId, CreateConsultingServiceRequest request) {
-        User user = userRepository.findById(consultantId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (!(user instanceof Admin) && !(user instanceof Consultant)) {
-            throw new IllegalStateException("Only admin or consultant can add services");
+    @Transactional
+    public AvailabilitySlotResponse addAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request) {
+        // 1. Fetch Consultant (just checking if they exist using User repo)
+        boolean consultantExists = userRepository.existsById(consultantId);
+        if (!consultantExists) {
+            throw new ResourceNotFoundException("Consultant not found");
         }
 
-        ConsultingService service = new ConsultingService();
-        service.setConsultantId(consultantId);
-        service.setServiceType(request.getServiceType().trim().toUpperCase());
-        service.setTitle(request.getTitle().trim());
-        service.setDescription(request.getDescription());
-        service.setDurationMinutes(request.getDurationMinutes());
-        service.setBasePrice(request.getBasePrice());
-        service.setIsActive(true);
-        return consultingServiceRepository.save(service);
-    }
-
-    @Override
-    public AvailabilitySlotResponse createAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request) {
+        // 2. Fetch the ConsultingService to ensure it exists and is active
         ConsultingService consultingService = consultingServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
 
         boolean serviceIsActive = Boolean.TRUE.equals(consultingService.getIsActive());
         if (!serviceIsActive) {
             throw new IllegalStateException("Consulting service is inactive");
-        }
-
-        boolean serviceBelongsToConsultant = consultingService.getConsultantId().equals(consultantId);
-        if (!serviceBelongsToConsultant) {
-            throw new IllegalStateException("Consultant can only add slots for their own services");
         }
 
         if (consultingService.getDurationMinutes() == null || consultingService.getDurationMinutes() <= 0) {
@@ -98,6 +79,7 @@ public class ConsultantServiceImpl implements ConsultantService {
             throw new IllegalStateException("Overlapping availability slot exists");
         }
 
+        // 3. Create and save the AvailabilitySlot
         AvailabilitySlot slot = new AvailabilitySlot();
         slot.setConsultantId(consultantId);
         slot.setServiceId(request.getServiceId());

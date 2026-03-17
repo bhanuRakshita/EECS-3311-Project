@@ -1,17 +1,20 @@
 package com.consultingplatform.consultant.web;
 
-import com.consultingplatform.consultant.domain.ConsultingService;
 import com.consultingplatform.consultant.service.ConsultantService;
 import com.consultingplatform.consultant.web.dto.*;
+import com.consultingplatform.consultingservice.domain.ConsultingService;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/consultant")
+@PreAuthorize("hasRole('CONSULTANT')")
 public class ConsultantController {
 
     private final ConsultantService consultantService;
@@ -20,19 +23,11 @@ public class ConsultantController {
         this.consultantService = consultantService;
     }
 
-    @PostMapping("/{consultantId}/services")
-    public ResponseEntity<ConsultingService> createConsultingService(
-            @PathVariable Long consultantId,
-            @Valid @RequestBody CreateConsultingServiceRequest request) {
-        ConsultingService created = consultantService.createConsultingService(consultantId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
     @PostMapping("/{consultantId}/availability")
-    public ResponseEntity<AvailabilitySlotResponse> createAvailabilitySlot(
+    public ResponseEntity<AvailabilitySlotResponse> addAvailabilitySlot(
             @PathVariable Long consultantId,
             @Valid @RequestBody CreateAvailabilitySlotRequest request) {
-        AvailabilitySlotResponse response = consultantService.createAvailabilitySlot(consultantId, request);
+        AvailabilitySlotResponse response = consultantService.addAvailabilitySlot(consultantId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
