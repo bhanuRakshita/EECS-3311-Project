@@ -9,6 +9,7 @@ import com.consultingplatform.user.domain.Consultant;
 import com.consultingplatform.user.domain.User;
 import com.consultingplatform.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.consultingplatform.security.PasswordService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -20,11 +21,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ConsultantRegistrationRepository consultantRegistrationRepository;
+    private final PasswordService passwordService;
 
     public UserServiceImpl(UserRepository userRepository,
-                          ConsultantRegistrationRepository consultantRegistrationRepository) {
+                          ConsultantRegistrationRepository consultantRegistrationRepository,
+                          PasswordService passwordService) {
         this.userRepository = userRepository;
         this.consultantRegistrationRepository = consultantRegistrationRepository;
+        this.passwordService = passwordService;
     }
 
     @Override
@@ -121,7 +125,15 @@ public class UserServiceImpl implements UserService {
     
     private void setCommonFields(User user, Map<String, Object> data) {
         user.setEmail((String) data.get("email"));
-        user.setPasswordHash((String) data.get("passwordHash"));
+        // Accept either a plain `password` (hash it via PasswordService) or a pre-hashed `passwordHash`.
+        if (data.containsKey("password")) {
+            String raw = (String) data.get("password");
+            if (raw != null) {
+                user.setPasswordHash(passwordService.hash(raw));
+            }
+        } else if (data.containsKey("passwordHash")) {
+            user.setPasswordHash((String) data.get("passwordHash"));
+        }
         user.setFirstName((String) data.get("firstName"));
         user.setLastName((String) data.get("lastName"));
         user.setPhoneNumber((String) data.get("phoneNumber"));

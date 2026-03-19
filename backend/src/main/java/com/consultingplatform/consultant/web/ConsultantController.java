@@ -2,19 +2,16 @@ package com.consultingplatform.consultant.web;
 
 import com.consultingplatform.consultant.service.ConsultantService;
 import com.consultingplatform.consultant.web.dto.*;
-import com.consultingplatform.consultingservice.domain.ConsultingService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/consultant")
-@PreAuthorize("hasRole('CONSULTANT')")
 public class ConsultantController {
 
     private final ConsultantService consultantService;
