@@ -8,6 +8,8 @@ import com.consultingplatform.admin.web.dto.ConsultantApprovalRequestDto;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalResponseDto;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.consultingplatform.security.CustomUserDetails;
 
 @Service
 public class ConsultantApprovalServiceImpl implements ConsultantApprovalService {
@@ -32,7 +34,14 @@ public class ConsultantApprovalServiceImpl implements ConsultantApprovalService 
             : ConsultantApprovalStatus.REJECTED;
 
         registration.setStatus(newStatus);
-        registration.setApprovedByAdminId(request.getAdminId());
+
+        // Record the approving admin from the authenticated principal rather than trusting the request
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            Long adminId = ((CustomUserDetails) principal).getId();
+            registration.setApprovedByAdminId(adminId == null ? null : adminId.toString());
+        }
+
         registration.setDecisionReason(request.getReason());
         registration.setDecidedAt(Instant.now());
 

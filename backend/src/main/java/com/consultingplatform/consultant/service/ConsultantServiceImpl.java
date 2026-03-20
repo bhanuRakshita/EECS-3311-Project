@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.consultingplatform.security.CustomUserDetails;
 
 @Service
 public class ConsultantServiceImpl implements ConsultantService {
@@ -161,11 +163,21 @@ public class ConsultantServiceImpl implements ConsultantService {
         return toBookingResponse(saved);
     }
 
+    // Ensure consultant ownership when necessary
     private Booking getBookingForConsultant(Long consultantId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
         if (!booking.getConsultantId().equals(consultantId)) {
             throw new IllegalStateException("Booking does not belong to this consultant");
+        }
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            Long userId = ((CustomUserDetails) principal).getId();
+            boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin && !userId.equals(consultantId)) {
+                throw new RuntimeException("Not authorized for this consultant booking");
+            }
         }
         return booking;
     }

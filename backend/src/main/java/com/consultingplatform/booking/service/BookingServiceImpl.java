@@ -9,6 +9,8 @@ import com.consultingplatform.notification.service.NotificationService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.consultingplatform.security.CustomUserDetails;
 import java.util.List;
 
 @Service
@@ -66,6 +68,17 @@ public class BookingServiceImpl implements BookingService {
     public Booking cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Enforce ownership for clients (admins bypass)
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            Long userId = ((CustomUserDetails) principal).getId();
+            boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin && !userId.equals(booking.getClientId())) {
+                throw new RuntimeException("Not authorized to cancel this booking");
+            }
+        }
 
         // Use State Pattern
         booking.cancel();
