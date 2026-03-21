@@ -9,6 +9,9 @@ import com.consultingplatform.notification.service.NotificationService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.consultingplatform.security.CustomUserDetails;
 import java.util.List;
 
 @Service
@@ -28,6 +31,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('CLIENT') and #request.clientId == principal.id")
     public Booking requestBooking(BookingRequest request) {
         // Fetch and validate the availability slot
         AvailabilitySlot slot = availabilitySlotRepository.findById(request.getSlotId())
@@ -63,9 +67,25 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('CLIENT','CONSULTANT','ADMIN')")
     public Booking cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+        // Enforce ownership: admins may cancel any booking; clients may cancel their own; consultants may cancel bookings assigned to them
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            Long userId = ((CustomUserDetails) principal).getId();
+            var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            boolean isAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            boolean isConsultant = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CONSULTANT"));
+            if (!isAdmin) {
+                boolean isClientOwner = userId.equals(booking.getClientId());
+                boolean isConsultantOwner = isConsultant && userId.equals(booking.getConsultantId());
+                if (!isClientOwner && !isConsultantOwner) {
+                    throw new RuntimeException("Not authorized to cancel this booking");
+                }
+            }
+        }
 
         // Use State Pattern
         booking.cancel();
@@ -85,6 +105,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CLIENT') and #clientId == principal.id")
     public List<Booking> getClientBookings(Long clientId) {
 
         return bookingRepository.findByClientId(clientId);

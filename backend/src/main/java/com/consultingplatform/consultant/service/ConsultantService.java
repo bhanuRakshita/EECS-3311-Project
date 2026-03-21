@@ -1,7 +1,6 @@
 package com.consultingplatform.consultant.service;
 
 import com.consultingplatform.consultant.web.dto.*;
-import com.consultingplatform.consultingservice.domain.ConsultingService;
 
 import java.util.List;
 
