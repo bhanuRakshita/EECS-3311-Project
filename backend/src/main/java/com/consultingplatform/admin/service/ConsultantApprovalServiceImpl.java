@@ -8,6 +8,7 @@ import com.consultingplatform.admin.web.dto.ConsultantApprovalRequestDto;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalResponseDto;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.consultingplatform.security.CustomUserDetails;
 
@@ -21,6 +22,7 @@ public class ConsultantApprovalServiceImpl implements ConsultantApprovalService 
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ConsultantApprovalResponseDto approveOrRejectConsultant(Long consultantId, ConsultantApprovalRequestDto request) {
         if (request == null || request.getDecision() == null) {
             throw new IllegalArgumentException("decision is required");

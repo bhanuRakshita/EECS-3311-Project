@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.consultingplatform.security.CustomUserDetails;
 
@@ -44,6 +45,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public AvailabilitySlotResponse addAvailabilitySlot(Long consultantId, CreateAvailabilitySlotRequest request) {
         // 1. Fetch Consultant (just checking if they exist using User repo)
         boolean consultantExists = userRepository.existsById(consultantId);
@@ -112,6 +114,7 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public List<ConsultantBookingResponse> getBookingsByStatus(Long consultantId, String status) {
         List<Booking> bookings;
         if (status != null && !status.isBlank()) {
@@ -123,6 +126,7 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public ConsultantBookingResponse acceptBooking(Long consultantId, Long bookingId) {
         Booking booking = getBookingForConsultant(consultantId, bookingId);
         booking.accept();
@@ -133,6 +137,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public ConsultantBookingResponse rejectBooking(Long consultantId, Long bookingId, BookingDecisionRequest request) {
         Booking booking = getBookingForConsultant(consultantId, bookingId);
         booking.reject();
@@ -156,8 +161,13 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public ConsultantBookingResponse completeBooking(Long consultantId, Long bookingId) {
         Booking booking = getBookingForConsultant(consultantId, bookingId);
+        // Ensure payment has been processed before completing the booking
+        if (!"PAID".equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalStateException("Cannot complete booking before payment is processed");
+        }
         booking.complete();
         Booking saved = bookingRepository.save(booking);
         return toBookingResponse(saved);
