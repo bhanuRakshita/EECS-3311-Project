@@ -13,6 +13,11 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import io.jsonwebtoken.Claims;
 
 @Component
 public class JwtTokenUtil {
@@ -50,13 +55,34 @@ public class JwtTokenUtil {
     public String generateToken(UserDetails userDetails) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + jwtExpirationMs);
+        Claims claims = Jwts.claims().setSubject(userDetails.getUsername());
+        // include authorities as a simple list of strings
+        List<String> roles = userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.toList());
+        claims.put("roles", roles);
+
+        // include userId when available (CustomUserDetails exposes it)
+        if (userDetails instanceof com.consultingplatform.security.CustomUserDetails) {
+            Long id = ((com.consultingplatform.security.CustomUserDetails) userDetails).getId();
+            if (id != null) claims.put("userId", id);
+        }
+
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(now)
-                .setExpiration(exp)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+            .setClaims(claims)
+            .setIssuedAt(now)
+            .setExpiration(exp)
+            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+            .compact();
     }
+
+        public Claims getAllClaimsFromToken(String token) {
+        return Jwts.parserBuilder()
+            .setSigningKey(getSigningKey())
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+        }
 
     public String extractUsername(String token) {
         Claims claims = Jwts.parserBuilder()
