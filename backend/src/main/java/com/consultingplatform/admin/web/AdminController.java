@@ -27,11 +27,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final ConsultantApprovalService consultantApprovalService;
@@ -68,21 +66,7 @@ public class AdminController {
         @PathVariable Long consultantId,
         @Valid @RequestBody ConsultantApprovalRequestDto request
     ) {
-        String adminId = request.getAdminId();
-        Long adminUserId;
-        try {
-            adminUserId = Long.parseLong(adminId.trim());
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admin can approve or reject consultant registration");
-        }
-
-        boolean isAdmin = userRepository.findById(adminUserId)
-            .map(user -> user instanceof Admin)
-            .orElse(false);
-        if (!isAdmin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admin can approve or reject consultant registration");
-        }
-
+        // Admin identity and role are enforced at the service layer; ignore any client-supplied adminId
         return ResponseEntity.ok(consultantApprovalService.approveOrRejectConsultant(consultantId, request));
     }
 
