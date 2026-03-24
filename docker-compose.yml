@@ -1,7 +1,6 @@
 services:
   db:
-    profiles: ["localdb"]
-    image: postgres:16-alpine
+    image: postgres:16-alpine #download and use the official Postgres image
     container_name: eecs3311-db
     environment:
       POSTGRES_DB: ${LOCAL_DB_NAME:-consulting_db}
@@ -22,11 +21,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: eecs3311-backend
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       SERVER_PORT: ${SPRING_PORT:-8080}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://${LOCAL_DB_HOST:-db}:5432/${LOCAL_DB_NAME:-consulting_db}}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-admin}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-changeme}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-${LOCAL_DB_USER:-admin}}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${LOCAL_DB_PASSWORD:-changeme}}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
       DB_CHANNEL_BINDING: ${DB_CHANNEL_BINDING:-disable}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
