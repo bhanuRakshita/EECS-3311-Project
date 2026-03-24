@@ -41,6 +41,56 @@ Each package is internally organized into:
 
 ---
 
+## Getting Started / How to Run
+
+This project supports running via **Docker** (recommended) or running **locally directly on your machine**.
+
+### 1. Prerequisites
+- **Java 17** (if running via IDE/Maven directly)
+- **Docker & Docker Compose** (if running containerized)
+- Make sure you have a `.env` file in the root of the project. (You can copy `.env.example` to `.env` if one exists).
+
+### 2. The Three Databases
+This project uses three different databases depending on how you run it:
+1. **Docker PostgreSQL (Local):** An isolated local DB created by Docker. Used when running `docker compose up`.
+2. **Neon DB (Cloud PostgreSQL):** A live remote database. Uncomment the `# 3. REMOTE NEON DATABASE` section in `.env` to connect to this.
+3. **H2 (In-Memory Database):** A fake, temporary DB used **only for running automated tests**. Keeps tests fast and safe.
+
+### 3. Running with Docker (Recommended)
+This method spins up both the **PostgreSQL database** and the **Spring Boot backend** inside isolated containers. You do not need to install Java or Postgres on your Mac.
+
+```bash
+# Build and start the backend and database
+docker compose up --build
+
+# Stop the containers
+docker compose down
+
+# Note: If you want to wipe the database clean, run:
+docker compose down -v
+```
+*(The backend will be available at `http://localhost:8080`)*
+
+### 4. Running Locally (Without Docker)
+If you prefer to run the backend directly from IntelliJ/Eclipse or Terminal, you must provide it with a database:
+1. **Using Docker just for the DB:**
+   Run `docker compose up db` to start the local DB. Then uncomment the `# 2. SPRING BOOT APP` section in `.env`.
+2. **Using the Neon Cloud DB:**
+   Uncomment the `# 3. REMOTE NEON DATABASE` section in `.env`.
+3. **Start the app:**
+   ```bash
+   cd backend
+   ./mvnw spring-boot:run
+   ```
+
+### 5. Running Tests
+Tests are automatically configured to use the **H2 In-Memory Database** (so they don't break your real data).
+```bash
+cd backend
+./mvnw test
+```
+---
+
 ## Design Patterns
 
 ### 1. State Pattern — Booking Lifecycle
@@ -100,68 +150,6 @@ PaymentStrategy (interface)
 ```
 
 When a booking is loaded from the database, its status string is passed to the factory to reconstruct the correct state object, without any `if/else` chains in the service layer.
-
----
-
-## How to Run
-
-### Prerequisites
-
-- Java 17+
-- Maven 3.8+
-- A PostgreSQL database with the schema from `backend/docs/consulting_db_schema.sql`
-
-### Steps
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/bhanuRakshita/EECS-3311-Project.git
-   cd EECS-3311-Project/backend
-   ```
-
-2. **Set the required environment variables:**
-
-   ```bash
-   export SPRING_DATASOURCE_URL=jdbc:postgresql://<host>/<database>?sslmode=require
-   export SPRING_DATASOURCE_USERNAME=<username>
-   export SPRING_DATASOURCE_PASSWORD=<password>
-   export SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-   export SPRING_JPA_HIBERNATE_DDL_AUTO=update
-   ```
-
-3. **Build and run:**
-
-   ```bash
-   mvn spring-boot:run
-   ```
-
-   The backend starts at `http://localhost:8080`.
-
-### Option 2: Docker Compose (no external database required)
-
-**Prerequisites:** Docker Desktop installed and running.
-
-1. From the project root, start both the database and backend:
-
-   ```bash
-   docker compose --profile localdb up --build
-   ```
-
-2. The backend starts at `http://localhost:8080`.
-   Database: `consulting_db`, user: `admin`, password: `changeme`.
-
-3. To stop:
-
-   ```bash
-   docker compose --profile localdb down
-   ```
-
-4. To stop and delete the database volume:
-
-   ```bash
-   docker compose --profile localdb down -v
-   ```
 
 ---
 
