@@ -104,6 +104,14 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    public List<AvailabilitySlotResponse> getAvailabilitySlotsByServiceId(Long serviceId) {
+        return availabilitySlotRepository.findByServiceId(serviceId)
+                .stream()
+                .map(this::toSlotResponse)
+                .toList();
+    }
+
+    @Override
     public void deleteAvailabilitySlot(Long consultantId, Long slotId) {
         AvailabilitySlot slot = availabilitySlotRepository.findById(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Availability slot not found"));

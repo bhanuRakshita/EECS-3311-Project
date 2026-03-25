@@ -10,6 +10,8 @@ public interface ConsultantService {
 
     List<AvailabilitySlotResponse> getAvailabilitySlots(Long consultantId);
 
+    List<AvailabilitySlotResponse> getAvailabilitySlotsByServiceId(Long serviceId);
+
     void deleteAvailabilitySlot(Long consultantId, Long slotId);
 
     List<ConsultantBookingResponse> getBookingsByStatus(Long consultantId, String status);
