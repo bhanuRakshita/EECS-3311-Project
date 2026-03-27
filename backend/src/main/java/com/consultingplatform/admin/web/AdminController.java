@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.consultingplatform.admin.web.dto.SystemStatusStubDto;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -83,5 +84,17 @@ public class AdminController {
         PolicyUpsertResult result = systemPolicyService.upsertPolicy(policyKey, request);
         HttpStatus status = result.isCreated() ? HttpStatus.CREATED : HttpStatus.OK;
         return ResponseEntity.status(status).body(result.getResponse());
+    }
+
+    /**
+     * STUB: to be implemented — return real platform health and dependency status.
+     */
+    @GetMapping("/system/status")
+    public ResponseEntity<SystemStatusStubDto> getSystemStatusStub() {
+        return ResponseEntity.ok(new SystemStatusStubDto(
+            "UP",
+            true,
+            "STUB: replace with real system status aggregation"
+        ));
     }
 }

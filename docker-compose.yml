@@ -32,6 +32,7 @@ services:
       DB_SSLMODE: ${DB_SSLMODE:-disable}
       DB_CHANNEL_BINDING: ${DB_CHANNEL_BINDING:-disable}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "${SPRING_PORT:-8080}:${SPRING_PORT:-8080}"
 
