@@ -54,3 +54,4 @@ frontend/.env
 # OS
 .DS_Store
 Thumbs.db
+postman/environments/Chat.environment.yaml
