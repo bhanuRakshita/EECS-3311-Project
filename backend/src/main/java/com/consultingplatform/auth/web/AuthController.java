@@ -76,7 +76,6 @@ public class AuthController {
         payload.put("email", req.getEmail());
         payload.put("password", req.getPassword());
         payload.put("phoneNumber", req.getPhoneNumber());
-        // Determine role — ADMIN requires a secret code
         String requestedRole = req.getRole();
         String role;
         if ("ADMIN".equalsIgnoreCase(requestedRole)) {
