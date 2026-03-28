@@ -76,8 +76,21 @@ public class AuthController {
         payload.put("email", req.getEmail());
         payload.put("password", req.getPassword());
         payload.put("phoneNumber", req.getPhoneNumber());
-        // Default to CLIENT role for registrations
-        payload.put("role", "CLIENT");
+        // Determine role — ADMIN requires a secret code
+        String requestedRole = req.getRole();
+        String role;
+        if ("ADMIN".equalsIgnoreCase(requestedRole)) {
+            if (!"EECS3311".equals(req.getAdminCode())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Invalid admin registration code"));
+            }
+            role = "ADMIN";
+        } else if ("CONSULTANT".equalsIgnoreCase(requestedRole)) {
+            role = "CONSULTANT";
+        } else {
+            role = "CLIENT";
+        }
+        payload.put("role", role);
 
         User created = userService.createUser(payload);
         // Simple response with created user id and email

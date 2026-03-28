@@ -20,6 +20,16 @@ public class RegisterRequest {
 
     private String phoneNumber;
 
+    private String role; // CLIENT, CONSULTANT, or ADMIN (requires valid adminCode)
+
+    private String adminCode; // Required when role is ADMIN
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
+    public String getAdminCode() { return adminCode; }
+    public void setAdminCode(String adminCode) { this.adminCode = adminCode; }
+
     public String getFirstName() {
         return firstName;
     }

@@ -1,5 +1,6 @@
 package com.consultingplatform.consultant.web;
 
+import com.consultingplatform.admin.repository.ConsultantRegistrationRepository;
 import com.consultingplatform.consultant.service.ConsultantService;
 import com.consultingplatform.consultant.web.dto.*;
 
@@ -9,15 +10,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/consultant")
 public class ConsultantController {
 
     private final ConsultantService consultantService;
+    private final ConsultantRegistrationRepository consultantRegistrationRepository;
 
-    public ConsultantController(ConsultantService consultantService) {
+    public ConsultantController(ConsultantService consultantService,
+                                ConsultantRegistrationRepository consultantRegistrationRepository) {
         this.consultantService = consultantService;
+        this.consultantRegistrationRepository = consultantRegistrationRepository;
+    }
+
+    @GetMapping("/{consultantId}/registration-status")
+    public ResponseEntity<Map<String, String>> getRegistrationStatus(@PathVariable Long consultantId) {
+        return consultantRegistrationRepository.findByConsultantId(consultantId)
+            .map(r -> ResponseEntity.ok(Map.of("status", r.getStatus().name())))
+            .orElse(ResponseEntity.ok(Map.of("status", "NOT_FOUND")));
     }
 
     @PostMapping("/{consultantId}/availability")
