@@ -12,11 +12,16 @@ The application follows a **layered, package-by-feature architecture**:
 
 ```
 com.consultingplatform
-├── user/           # User management — Client, Consultant, Admin (inheritance)
-├── consultant/     # Consulting services, availability slots, booking decisions
-├── booking/        # Booking lifecycle and state machine
-├── payment/        # Payment processing, payment methods, payment history
-└── admin/          # Consultant approval, system policy management
+├── admin/               # Consultant approval, system policy management
+├── auth/                # Authentication endpoints and payload DTOs
+├── booking/             # Booking lifecycle and state machine
+├── config/              # Global configurations (Security, Exception Handling)
+├── consultant/          # Consultant profiles and availability slots
+├── consultingservice/   # Core consulting services catalog
+├── notification/        # System and email notifications
+├── payment/             # Payment processing, payment methods, payment history
+├── security/            # JWT filters, UserDetailsService, security chains
+└── user/                # User management — Client, Consultant, Admin (inheritance)
 ```
 
 Each package is internally organized into:
@@ -30,7 +35,7 @@ Each package is internally organized into:
 - `frontend/` — Static demo UI (`index.html`) for exercising all API flows
 - `diagrams/` — UML and design diagrams
 
-**Tech Stack:** Java 17, Spring Boot 4.0.3, Spring Data JPA, PostgreSQL, Lombok
+**Tech Stack:** Java 17, Spring Boot 4.0.3, Spring Data JPA, PostgreSQL, Lombok, Docker
 
 **High-level flow:**
 1. Consultants create services and availability slots
@@ -89,6 +94,7 @@ Tests are automatically configured to use the **H2 In-Memory Database** (so they
 cd backend
 ./mvnw test
 ```
+
 ---
 
 ## Design Patterns
@@ -157,8 +163,9 @@ When a booking is loaded from the database, its status string is passed to the f
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/services` | List all consulting services |
-| GET | `/api/consultant/{id}/availability` | Get available slots for a consultant |
+| POST | `/api/auth/login` | Authenticate an existing user |
+| GET | `/api/services` | List all consulting services |
+| GET | `/api/services/{serviceId}/availability` | Get available slots for a specific service |
 | POST | `/bookings` | Create a booking `{ clientId, slotId }` |
 | GET | `/bookings/{id}` | Get booking by ID |
 | PUT | `/bookings/{id}/cancel` | Client cancels a booking |
@@ -166,9 +173,9 @@ When a booking is loaded from the database, its status string is passed to the f
 | PUT | `/api/consultant/{cid}/bookings/{bid}/reject` | Consultant rejects |
 | PUT | `/api/consultant/{cid}/bookings/{bid}/complete` | Consultant completes |
 | POST | `/api/payments/process` | Process a payment |
-| GET | `/api/payments/client/{id}/history` | Client payment history |
-| GET | `/users` | List all users |
-| POST | `/users` | Create a user `{ role, firstName, lastName, email, ... }` |
+| GET | `/api/payments/history/{clientId}` | Client payment history |
+| GET | `/api/users` | List all users |
+| POST | `/api/users` | Create a user `{ role, firstName, lastName, email, ... }` |
 
 ---
 
@@ -181,3 +188,4 @@ Contributions are visible from the Git commit history (`git log --oneline --all`
 | **Bhanu Rakshita Paul** | 31 | Project lead. User module with JPA inheritance (`Client`, `Consultant`, `Admin`). Admin module (consultant approval, system policies). Booking module refactoring and endpoint cleanup. Database schema design and migrations.  |
 | **Vansh Bhasin** | 30 |  Consultant availability slot management. Booking–payment integration. Docker and environment configuration. `ConsultingService` package refactoring. |
 | **Rudra (RD-1205)** | 7 | Payment module implementing Strategy Pattern (`CreditCardPayment`, `DebitCardPayment`, `PayPalPayment`, `BankTransferPayment`). End-to-end integration testing and seed data.PR reviews and merges. |
+
