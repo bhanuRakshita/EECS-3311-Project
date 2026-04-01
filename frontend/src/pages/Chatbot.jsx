@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { PromptInputBox } from '../shared/components/PromptInputBox'
 import { Bot, User } from 'lucide-react'
 import { getToken } from '../shared/lib/auth'
+import ChatMessageContent from '../shared/components/ChatMessageContent'
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
@@ -93,7 +94,7 @@ export default function Chatbot() {
                   ? 'bg-indigo-600 text-white rounded-tr-sm'
                   : 'bg-[#1F2023] text-gray-100 border border-[#333333] rounded-tl-sm'
               }`}>
-                {msg.content}
+                <ChatMessageContent content={msg.content} role={msg.role} />
               </div>
             </div>
           ))}
