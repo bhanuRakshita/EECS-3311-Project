@@ -1,61 +1,31 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bot, User, X, MessageCircle } from 'lucide-react'
 import { PromptInputBox } from './PromptInputBox'
-import { getToken } from '../lib/auth'
+import { useAgentChat } from '../chat'
 import ChatMessageContent from './ChatMessageContent'
+
+const INITIAL_MESSAGES = [
+  {
+    id: 1,
+    role: 'assistant',
+    content: "Hi! I'm your ConsultHub assistant. How can I help you today?",
+  },
+]
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'assistant',
-      content: "Hi! I'm your ConsultHub assistant. How can I help you today?",
-    },
-  ])
-  const [conversationId, setConversationId] = useState(null)
-  const [conversationHistory, setConversationHistory] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { messages, isLoading, sendMessage } = useAgentChat({
+    initialMessages: INITIAL_MESSAGES,
+  })
   const bottomRef = useRef(null)
+
+  const closePanel = () => {
+    setOpen(false)
+  }
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, open])
-
-  const sendMessage = async (text) => {
-    if (!text.trim()) return
-    const userMsg = { id: Date.now(), role: 'user', content: text }
-    setMessages((prev) => [...prev, userMsg])
-    setIsLoading(true)
-    try {
-      const token = getToken()
-      const body = {
-        message: text,
-        ...(conversationId ? { conversationId } : {}),
-        ...(conversationHistory ? { conversationHistory } : {}),
-      }
-      const res = await fetch('/api/agent/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (data.conversationId) setConversationId(data.conversationId)
-      if (data.conversationHistory) setConversationHistory(data.conversationHistory)
-      const reply = data?.reply ?? 'No response received.'
-      setMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply }])
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please try again shortly." },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
@@ -77,7 +47,8 @@ export default function ChatWidget() {
               <span className="text-xs text-gray-400">Online</span>
             </div>
             <button
-              onClick={() => setOpen(false)}
+              type="button"
+              onClick={closePanel}
               className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#2e303a] text-gray-400 hover:text-white transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -128,7 +99,8 @@ export default function ChatWidget() {
 
       {/* Toggle Button */}
       <button
-        onClick={() => setOpen((p) => !p)}
+        type="button"
+        onClick={() => (open ? closePanel() : setOpen(true))}
         className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-lg transition-colors"
       >
         {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}

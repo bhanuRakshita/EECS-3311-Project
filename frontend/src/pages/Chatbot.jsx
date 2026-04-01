@@ -1,62 +1,25 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { PromptInputBox } from '../shared/components/PromptInputBox'
 import { Bot, User } from 'lucide-react'
-import { getToken } from '../shared/lib/auth'
+import { useAgentChat } from '../shared/chat'
 import ChatMessageContent from '../shared/components/ChatMessageContent'
 
+const INITIAL_MESSAGES = [
+  {
+    id: 1,
+    role: 'assistant',
+    content:
+      "Hi! I'm your ConsultHub assistant. I can help you find the right consultant, explain our services, answer questions about bookings and payments, or anything else you need. How can I help you today?",
+  },
+]
+
 export default function Chatbot() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'assistant',
-      content: "Hi! I'm your ConsultHub assistant. I can help you find the right consultant, explain our services, answer questions about bookings and payments, or anything else you need. How can I help you today?",
-    },
-  ])
-  const [conversationId, setConversationId] = useState(null)
-  const [conversationHistory, setConversationHistory] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { messages, isLoading, sendMessage } = useAgentChat({ initialMessages: INITIAL_MESSAGES })
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  const sendMessage = async (text) => {
-    if (!text.trim()) return
-
-    const userMsg = { id: Date.now(), role: 'user', content: text }
-    setMessages((prev) => [...prev, userMsg])
-    setIsLoading(true)
-
-    try {
-      const token = getToken()
-      const body = {
-        message: text,
-        ...(conversationId ? { conversationId } : {}),
-        ...(conversationHistory ? { conversationHistory } : {}),
-      }
-      const res = await fetch('/api/agent/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (data.conversationId) setConversationId(data.conversationId)
-      if (data.conversationHistory) setConversationHistory(data.conversationHistory)
-      const reply = data?.reply ?? 'No response received.'
-      setMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply }])
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please try again shortly." },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-57px)] bg-[#16171d]">
