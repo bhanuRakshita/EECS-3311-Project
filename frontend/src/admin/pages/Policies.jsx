@@ -1,19 +1,17 @@
 import { useState } from 'react'
 import { updatePolicy } from '../../shared/lib/api'
+import { getUserId } from '../../shared/lib/auth'
 
 const KEY_TEMPLATES = {
-  '': '',
-  'PRICING_STRATEGY': JSON.stringify({ strategyType: 'DYNAMIC', dynamicMultiplier: 1.2, discountPercentage: 0.15 }, null, 2),
-  'REFUND_POLICY': JSON.stringify({ tiers: [ { hoursBefore: 24, refundPercentage: 1.0 }, { hoursBefore: 12, refundPercentage: 0.4 }, { hoursBefore: 5, refundPercentage: 0.1 } ] }, null, 2),
-  'NOTIFICATION_SETTINGS': JSON.stringify({ emailEnabled: true, smsEnabled: false, pushEnabled: false }, null, 2),
-  'MODEL': JSON.stringify({ provider: 'Google', model_name: 'gemini-1.5-pro', temperature: 0.7 }, null, 2),
-  'CANCELLATION_RULES': JSON.stringify({ allowed: true, penalty_fee: 50 }, null, 2)
+  '': {},
+  'PRICING_STRATEGY': { strategyType: 'DYNAMIC', dynamicMultiplier: 1.2, discountPercentage: 0.15 },
+  'REFUND_POLICY': { tiers: [ { hoursBefore: 24, refundPercentage: 1.0 }, { hoursBefore: 12, refundPercentage: 0.4 }, { hoursBefore: 5, refundPercentage: 0.1 } ] },
+  'NOTIFICATION_SETTINGS': { emailEnabled: true, smsEnabled: false, pushEnabled: false }
 }
 
 export default function AdminPolicies() {
   const [key, setKey] = useState('')
-  const [value, setValue] = useState('')
-  const [description, setDescription] = useState('')
+  const [formData, setFormData] = useState({})
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
@@ -24,16 +22,148 @@ export default function AdminPolicies() {
     setSuccess('')
     setLoading(true)
     try {
-      await updatePolicy(key, { value, description })
+      const adminId = getUserId() ? String(getUserId()) : 'admin';
+      await updatePolicy(key, { adminId, policyValue: JSON.stringify(formData) })
       setSuccess(`Policy "${key}" saved.`)
       setKey('')
-      setValue('')
-      setDescription('')
+      setFormData({})
     } catch (err) {
       setError(err.response?.data?.message ?? 'Failed to save policy')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFormChange = (field, val) => {
+    setFormData(prev => ({ ...prev, [field]: val }))
+  }
+
+  const renderFormFields = () => {
+    if (!key) return null;
+
+    if (key === 'NOTIFICATION_SETTINGS') {
+      return (
+        <div className="space-y-3 p-4 bg-[#16171d] border border-[#333333] rounded-lg">
+          {['emailEnabled', 'smsEnabled', 'pushEnabled'].map(field => (
+            <label key={field} className="flex items-center space-x-3 text-sm text-gray-300 cursor-pointer">
+              <input 
+                type="checkbox"
+                checked={formData[field] || false}
+                onChange={(e) => handleFormChange(field, e.target.checked)}
+                className="w-4 h-4 bg-gray-900 border-gray-700 rounded text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>{field}</span>
+            </label>
+          ))}
+        </div>
+      )
+    }
+
+    if (key === 'PRICING_STRATEGY') {
+      const isDynamic = formData.strategyType === 'DYNAMIC'
+      const isDiscounted = formData.strategyType === 'DISCOUNTED'
+
+      return (
+        <div className="space-y-4 p-4 bg-[#16171d] border border-[#333333] rounded-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Strategy Type</label>
+            <select
+              value={formData.strategyType || 'FIXED'}
+              onChange={(e) => handleFormChange('strategyType', e.target.value)}
+              className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="FIXED">FIXED</option>
+              <option value="DYNAMIC">DYNAMIC</option>
+              <option value="DISCOUNTED">DISCOUNTED</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {isDynamic && (
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Dynamic Multiplier</label>
+                <input
+                  type="number" step="0.01"
+                  value={formData.dynamicMultiplier ?? 1.0}
+                  onChange={(e) => handleFormChange('dynamicMultiplier', parseFloat(e.target.value))}
+                  className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
+            {isDiscounted && (
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Discount %</label>
+                <input
+                  type="number" step="0.01"
+                  value={formData.discountPercentage ?? 0}
+                  onChange={(e) => handleFormChange('discountPercentage', parseFloat(e.target.value))}
+                  className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    if (key === 'REFUND_POLICY') {
+      const tiers = formData.tiers || [];
+      return (
+        <div className="space-y-4 p-4 bg-[#16171d] border border-[#333333] rounded-lg">
+          <label className="block text-xs font-medium text-gray-400">Refund Tiers</label>
+          {tiers.map((tier, idx) => (
+            <div key={idx} className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Hours Before</label>
+                <input
+                  type="number"
+                  value={tier.hoursBefore}
+                  onChange={(e) => {
+                    const newTiers = [...tiers];
+                    newTiers[idx].hoursBefore = parseInt(e.target.value, 10) || 0;
+                    handleFormChange('tiers', newTiers);
+                  }}
+                  className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Refund % (0-1.0)</label>
+                <input
+                  type="number" step="0.01"
+                  value={tier.refundPercentage}
+                  onChange={(e) => {
+                    const newTiers = [...tiers];
+                    newTiers[idx].refundPercentage = parseFloat(e.target.value) || 0;
+                    handleFormChange('tiers', newTiers);
+                  }}
+                  className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newTiers = tiers.filter((_, i) => i !== idx);
+                    handleFormChange('tiers', newTiers);
+                  }}
+                  className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => handleFormChange('tiers', [...tiers, { hoursBefore: 0, refundPercentage: 0 }])}
+            className="w-full mt-2 py-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-md border-dashed transition-colors"
+          >
+            + Add Tier
+          </button>
+        </div>
+      )
+    }
+
+    return null;
   }
 
   return (
@@ -55,7 +185,8 @@ export default function AdminPolicies() {
                 const newKey = e.target.value
                 setKey(newKey)
                 if (KEY_TEMPLATES[newKey] !== undefined) {
-                  setValue(KEY_TEMPLATES[newKey])
+                  // Deep clone the template object to avoid modifying the original
+                  setFormData(JSON.parse(JSON.stringify(KEY_TEMPLATES[newKey])))
                 }
               }}
               className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -64,30 +195,10 @@ export default function AdminPolicies() {
               <option value="PRICING_STRATEGY">PRICING_STRATEGY</option>
               <option value="REFUND_POLICY">REFUND_POLICY</option>
               <option value="NOTIFICATION_SETTINGS">NOTIFICATION_SETTINGS</option>
-              <option value="MODEL">MODEL</option>
-              <option value="CANCELLATION_RULES">CANCELLATION_RULES</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Value (JSON)</label>
-            <textarea
-              required
-              rows={6}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="e.g. { ... }"
-              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Description (optional)</label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What this policy controls"
-              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
+          
+          {renderFormFields()}
 
           {success && (
             <div className="text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">{success}</div>
@@ -98,7 +209,7 @@ export default function AdminPolicies() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !key}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
           >
             {loading ? 'Saving…' : 'Save Policy'}

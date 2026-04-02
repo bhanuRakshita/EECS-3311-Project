@@ -18,11 +18,9 @@ public class SystemPolicyServiceImpl implements SystemPolicyService {
     private static final Logger log = LoggerFactory.getLogger(SystemPolicyServiceImpl.class);
 
     private static final Set<String> ALLOWED_KEYS = Set.of(
-        "CANCELLATION_RULES",
         "PRICING_STRATEGY",
         "NOTIFICATION_SETTINGS",
-        "REFUND_POLICY",
-        "MODEL"
+        "REFUND_POLICY"
     );
 
     private final SystemPolicyRepository repository;
