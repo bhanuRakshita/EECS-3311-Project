@@ -32,6 +32,9 @@ public class ConsultingService {
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
+    @Transient
+    private BigDecimal originalPrice;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

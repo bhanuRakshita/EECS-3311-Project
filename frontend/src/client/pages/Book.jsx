@@ -68,9 +68,16 @@ export default function Book() {
             <span className="text-gray-200">{new Date(slot.endAt).toLocaleString()}</span>
           </div>
           {service && (
-            <div className="flex justify-between text-sm border-t border-[#2e303a] pt-3">
+            <div className="flex justify-between items-center text-sm border-t border-[#2e303a] pt-3">
               <span className="text-gray-500">Price</span>
-              <span className="text-gray-200 font-semibold">${Number(service.basePrice).toFixed(2)}</span>
+              {service.originalPrice && Number(service.originalPrice) > Number(service.basePrice) ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 line-through">${Number(service.originalPrice).toFixed(2)}</span>
+                  <span className="text-green-400 font-semibold">${Number(service.basePrice).toFixed(2)}</span>
+                </div>
+              ) : (
+                <span className="text-gray-200 font-semibold">${Number(service.basePrice).toFixed(2)}</span>
+              )}
             </div>
           )}
         </div>
