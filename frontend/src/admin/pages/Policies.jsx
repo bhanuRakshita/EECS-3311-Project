@@ -6,7 +6,7 @@ const KEY_TEMPLATES = {
   '': {},
   'PRICING_STRATEGY': { strategyType: 'DYNAMIC', dynamicMultiplier: 1.2, discountPercentage: 0.15 },
   'REFUND_POLICY': { tiers: [ { hoursBefore: 24, refundPercentage: 1.0 }, { hoursBefore: 12, refundPercentage: 0.4 }, { hoursBefore: 5, refundPercentage: 0.1 } ] },
-  'NOTIFICATION_SETTINGS': { emailEnabled: true, smsEnabled: false, pushEnabled: false }
+  'NOTIFICATION_SETTINGS': { enabled: true }
 }
 
 export default function AdminPolicies() {
@@ -44,17 +44,15 @@ export default function AdminPolicies() {
     if (key === 'NOTIFICATION_SETTINGS') {
       return (
         <div className="space-y-3 p-4 bg-[#16171d] border border-[#333333] rounded-lg">
-          {['emailEnabled', 'smsEnabled', 'pushEnabled'].map(field => (
-            <label key={field} className="flex items-center space-x-3 text-sm text-gray-300 cursor-pointer">
-              <input 
-                type="checkbox"
-                checked={formData[field] || false}
-                onChange={(e) => handleFormChange(field, e.target.checked)}
-                className="w-4 h-4 bg-gray-900 border-gray-700 rounded text-indigo-600 focus:ring-indigo-500"
-              />
-              <span>{field}</span>
-            </label>
-          ))}
+          <label className="flex items-center space-x-3 text-sm text-gray-300 cursor-pointer">
+            <input 
+              type="checkbox"
+              checked={formData.enabled ?? true}
+              onChange={(e) => handleFormChange('enabled', e.target.checked)}
+              className="w-4 h-4 bg-gray-900 border-gray-700 rounded text-indigo-600 focus:ring-indigo-500"
+            />
+            <span>Enable System Notifications</span>
+          </label>
         </div>
       )
     }

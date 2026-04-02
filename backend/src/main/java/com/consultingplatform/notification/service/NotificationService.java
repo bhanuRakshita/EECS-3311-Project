@@ -18,7 +18,7 @@ public class NotificationService {
 
     private boolean isNotificationSystemEnabled() {
         return systemPolicyService.getPolicyConfig("NOTIFICATION_SETTINGS", NotificationSettingsConfig.class)
-                .map(config -> config.isEmailEnabled() || config.isSmsEnabled() || config.isPushEnabled())
+                .map(NotificationSettingsConfig::isEnabled)
                 .orElse(true); // Default to ON if no policy is set
     }
 
