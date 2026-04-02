@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { updatePolicy } from '../../shared/lib/api'
 
+const KEY_TEMPLATES = {
+  '': '',
+  'PRICING_STRATEGY': JSON.stringify({ strategyType: 'DYNAMIC', dynamicMultiplier: 1.2, discountPercentage: 0.15 }, null, 2),
+  'REFUND_POLICY': JSON.stringify({ tiers: [ { hoursBefore: 24, refundPercentage: 1.0 }, { hoursBefore: 12, refundPercentage: 0.4 }, { hoursBefore: 5, refundPercentage: 0.1 } ] }, null, 2),
+  'NOTIFICATION_SETTINGS': JSON.stringify({ emailEnabled: true, smsEnabled: false, pushEnabled: false }, null, 2),
+  'MODEL': JSON.stringify({ provider: 'Google', model_name: 'gemini-1.5-pro', temperature: 0.7 }, null, 2),
+  'CANCELLATION_RULES': JSON.stringify({ allowed: true, penalty_fee: 50 }, null, 2)
+}
+
 export default function AdminPolicies() {
   const [key, setKey] = useState('')
   const [value, setValue] = useState('')
@@ -39,22 +48,35 @@ export default function AdminPolicies() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Policy key</label>
-            <input
+            <select
               required
               value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="e.g. max_bookings_per_client"
-              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
+              onChange={(e) => {
+                const newKey = e.target.value
+                setKey(newKey)
+                if (KEY_TEMPLATES[newKey] !== undefined) {
+                  setValue(KEY_TEMPLATES[newKey])
+                }
+              }}
+              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="" disabled>Select a policy key...</option>
+              <option value="PRICING_STRATEGY">PRICING_STRATEGY</option>
+              <option value="REFUND_POLICY">REFUND_POLICY</option>
+              <option value="NOTIFICATION_SETTINGS">NOTIFICATION_SETTINGS</option>
+              <option value="MODEL">MODEL</option>
+              <option value="CANCELLATION_RULES">CANCELLATION_RULES</option>
+            </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Value</label>
-            <input
+            <label className="block text-sm font-medium text-gray-300 mb-1">Value (JSON)</label>
+            <textarea
               required
+              rows={6}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="e.g. 5"
-              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="e.g. { ... }"
+              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono"
             />
           </div>
           <div>
