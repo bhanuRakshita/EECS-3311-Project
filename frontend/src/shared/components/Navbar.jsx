@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/context/AuthContext'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Bell } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Bell, X } from 'lucide-react'
 import { getNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead } from '../lib/api'
 
 const TYPE_LABEL = {
   PAYMENT_SUCCESS: 'Payment',
+  CONSULTANT_PENDING_APPROVAL: 'Approval',
   BOOKING_REJECTED: 'Booking',
   BOOKING_CANCELLED: 'Booking',
   BOOKING_CONFIRMED: 'Booking',
@@ -17,6 +19,7 @@ const TYPE_LABEL = {
 
 const TYPE_COLOR = {
   PAYMENT_SUCCESS: 'text-green-400',
+  CONSULTANT_PENDING_APPROVAL: 'text-amber-400',
   BOOKING_REJECTED: 'text-red-400',
   BOOKING_CANCELLED: 'text-red-400',
   BOOKING_CONFIRMED: 'text-blue-400',
@@ -34,6 +37,10 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
+/** Poll interval while the tab is visible (fast enough to feel immediate without WebSockets). */
+const UNREAD_POLL_MS = 3000
+const BANNER_AUTO_DISMISS_MS = 9000
+
 export default function Navbar() {
   const { user, logout, roles } = useAuth()
   const navigate = useNavigate()
@@ -45,18 +52,54 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [banner, setBanner] = useState(null)
   const dropdownRef = useRef(null)
   const pollRef = useRef(null)
+  const prevUnreadRef = useRef(null)
+  const bannerTimerRef = useRef(null)
+
+  const clearBannerTimer = useCallback(() => {
+    if (bannerTimerRef.current) {
+      clearTimeout(bannerTimerRef.current)
+      bannerTimerRef.current = null
+    }
+  }, [])
+
+  const dismissBanner = useCallback(() => {
+    clearBannerTimer()
+    setBanner(null)
+  }, [clearBannerTimer])
 
   const fetchUnread = useCallback(async () => {
     if (!user) return
     try {
       const res = await getUnreadCount()
-      setUnreadCount(res.data.count)
+      const count = res.data.count
+      const prev = prevUnreadRef.current
+      if (prev !== null && count > prev) {
+        const delta = count - prev
+        let subtitle = ''
+        try {
+          const listRes = await getNotifications()
+          const latest = listRes.data?.[0]
+          subtitle = typeof latest?.payload === 'string' ? latest.payload.slice(0, 160) : ''
+        } catch {
+          // ignore
+        }
+        clearBannerTimer()
+        const title = delta === 1 ? 'New notification' : `${delta} new notifications`
+        setBanner({ title, subtitle })
+        bannerTimerRef.current = setTimeout(() => {
+          setBanner(null)
+          bannerTimerRef.current = null
+        }, BANNER_AUTO_DISMISS_MS)
+      }
+      prevUnreadRef.current = count
+      setUnreadCount(count)
     } catch {
       // ignore
     }
-  }, [user])
+  }, [user, clearBannerTimer])
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -67,13 +110,32 @@ export default function Navbar() {
     }
   }, [])
 
-  // Poll unread count every 30s
+  useEffect(() => {
+    prevUnreadRef.current = null
+  }, [user])
+
+  // Poll unread count so new notifications can show a banner quickly for any role
   useEffect(() => {
     if (!user) return
     fetchUnread()
-    pollRef.current = setInterval(fetchUnread, 30000)
-    return () => clearInterval(pollRef.current)
+    pollRef.current = setInterval(() => {
+      if (!document.hidden) fetchUnread()
+    }, UNREAD_POLL_MS)
+    return () => {
+      clearInterval(pollRef.current)
+    }
   }, [user, fetchUnread])
+
+  useEffect(() => {
+    if (!user) return
+    const onVisible = () => {
+      if (!document.hidden) fetchUnread()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [user, fetchUnread])
+
+  useEffect(() => () => clearBannerTimer(), [clearBannerTimer])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -91,6 +153,12 @@ export default function Navbar() {
       await fetchNotifications()
     }
     setOpen((v) => !v)
+  }
+
+  const handleBannerClick = async () => {
+    await fetchNotifications()
+    setOpen(true)
+    dismissBanner()
   }
 
   const handleMarkRead = async (id) => {
@@ -113,6 +181,7 @@ export default function Navbar() {
   }
 
   return (
+    <div className="sticky top-0 z-50">
     <nav className="bg-[#1F2023] border-b border-[#2e303a] px-6 py-3 flex items-center justify-between">
       <Link to="/" className="text-xl font-semibold text-indigo-400">
         ConsultHub
@@ -218,5 +287,54 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+
+    <AnimatePresence>
+      {banner && (
+        <motion.div
+          key="notification-banner"
+          role="status"
+          className="border-b border-indigo-500/35 bg-gradient-to-r from-indigo-950/95 to-[#1a1b24] px-4 py-2.5 flex items-start gap-3 shadow-lg overflow-hidden"
+          initial={{ opacity: 0, y: -18, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{
+            opacity: 0,
+            y: -10,
+            scale: 0.99,
+            transition: { duration: 0.32, ease: [0.4, 0, 1, 1] },
+          }}
+          transition={{
+            type: 'spring',
+            stiffness: 420,
+            damping: 32,
+            mass: 0.72,
+            opacity: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleBannerClick}
+            className="flex-1 min-w-0 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+          >
+            <p className="text-sm font-semibold text-white">{banner.title}</p>
+            {banner.subtitle ? (
+              <p className="text-xs text-gray-300 mt-0.5 line-clamp-2 leading-snug">{banner.subtitle}</p>
+            ) : null}
+            <p className="text-[11px] text-indigo-300/90 mt-1">Open notifications</p>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              dismissBanner()
+            }}
+            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 shrink-0"
+            aria-label="Dismiss notification banner"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </div>
   )
 }

@@ -4,6 +4,8 @@ import com.consultingplatform.booking.domain.Booking;
 import com.consultingplatform.notification.domain.Notification;
 import com.consultingplatform.notification.domain.NotificationType;
 import com.consultingplatform.notification.repository.NotificationRepository;
+import com.consultingplatform.user.domain.Consultant;
+import com.consultingplatform.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     public void sendBookingCancelledNotifications(Booking booking) {
         String payload = buildBookingCancelledPayload(booking);
@@ -46,21 +49,28 @@ public class NotificationService {
         notificationRepository.save(clientNotification);
     }
 
-    public void sendPaymentSuccessNotifications(Booking booking) {
-        Notification clientNotification = Notification.builder()
+    public void sendPaymentSuccessNotification(Booking booking) {
+        String payload = buildPaymentSuccessPayload(booking);
+
+        Notification notification = Notification.builder()
                 .userId(booking.getClientId())
                 .notificationType(NotificationType.PAYMENT_SUCCESS)
-                .payload("Payment successful for booking #" + booking.getId() + ". Your session is confirmed.")
+                .payload(payload)
                 .build();
 
-        Notification consultantNotification = Notification.builder()
-                .userId(booking.getConsultantId())
-                .notificationType(NotificationType.PAYMENT_SUCCESS)
-                .payload("Payment received for booking #" + booking.getId() + ". The session is now fully paid.")
-                .build();
+        notificationRepository.save(notification);
+    }
 
-        notificationRepository.save(clientNotification);
-        notificationRepository.save(consultantNotification);
+    public void sendConsultantPendingApprovalNotificationsToAdmins(Consultant consultant) {
+        String payload = buildConsultantPendingApprovalPayload(consultant);
+        for (Long adminId : userRepository.findAllAdminIds()) {
+            Notification notification = Notification.builder()
+                    .userId(adminId)
+                    .notificationType(NotificationType.CONSULTANT_PENDING_APPROVAL)
+                    .payload(payload)
+                    .build();
+            notificationRepository.save(notification);
+        }
     }
 
     public List<Notification> getNotificationsForUser(Long userId) {
@@ -95,5 +105,14 @@ public class NotificationService {
             return "Booking #" + booking.getId() + " was rejected by the consultant. Reason: " + reason;
         }
         return "Booking #" + booking.getId() + " was rejected by the consultant.";
+    }
+
+    private String buildPaymentSuccessPayload(Booking booking) {
+        return "Payment successful for booking #" + booking.getId() + ". Your session is confirmed.";
+    }
+
+    private String buildConsultantPendingApprovalPayload(Consultant consultant) {
+        String name = consultant.getFullName() != null ? consultant.getFullName() : consultant.getEmail();
+        return "New consultant " + name + " (ID #" + consultant.getId() + ") is registered and pending approval.";
     }
 }

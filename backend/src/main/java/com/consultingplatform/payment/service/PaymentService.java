@@ -93,7 +93,7 @@ public class PaymentService {
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             booking.setStatus("PAID");
             bookingRepository.save(booking);
-            notificationService.sendPaymentSuccessNotifications(booking);
+            notificationService.sendPaymentSuccessNotification(booking);
         }
 
         return toResponseDto(payment);
