@@ -13,6 +13,42 @@ const STATUS_COLORS = {
 
 const FILTERS = ['ALL', 'REQUESTED', 'CONFIRMED', 'PAID', 'COMPLETED', 'REJECTED', 'CANCELLED']
 
+function RejectModal({ onConfirm, onCancel }) {
+  const [reason, setReason] = useState('')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-[#1F2023] border border-[#2e303a] rounded-2xl w-full max-w-md mx-4 p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-white">Reject Booking</h3>
+        <p className="text-sm text-gray-400">Optionally provide a reason for the client.</p>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          maxLength={500}
+          rows={4}
+          placeholder="Reason for rejection (optional)…"
+          className="w-full bg-[#16171d] border border-[#3a3c48] rounded-xl px-3 py-2 text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+        <p className="text-xs text-gray-600 text-right">{reason.length}/500</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="text-sm bg-[#2e303a] hover:bg-[#3a3c48] text-gray-300 px-4 py-2 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason.trim())}
+            className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            Confirm Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ConsultantBookings() {
   const consultantId = getUserId()
   const [bookings, setBookings] = useState([])
@@ -20,6 +56,7 @@ export default function ConsultantBookings() {
   const [servicesMap, setServicesMap] = useState({})
   const [filter, setFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
+  const [rejectTarget, setRejectTarget] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -46,13 +83,19 @@ export default function ConsultantBookings() {
 
   useEffect(() => { load() }, [filter])
 
-  const action = async (fn, bookingId) => {
+  const action = async (fn, bookingId, ...args) => {
     try {
-      await fn(consultantId, bookingId)
+      await fn(consultantId, bookingId, ...args)
       load()
     } catch (err) {
       alert(err.response?.data?.message ?? 'Action failed')
     }
+  }
+
+  const handleRejectConfirm = async (reason) => {
+    const bookingId = rejectTarget
+    setRejectTarget(null)
+    await action(rejectBooking, bookingId, reason)
   }
 
   const clientName = (id) => {
@@ -65,6 +108,13 @@ export default function ConsultantBookings() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      {rejectTarget !== null && (
+        <RejectModal
+          onConfirm={handleRejectConfirm}
+          onCancel={() => setRejectTarget(null)}
+        />
+      )}
+
       <h2 className="text-2xl font-semibold text-white mb-4">Booking Requests</h2>
 
       <div className="flex items-center gap-3 mb-6">
@@ -115,6 +165,9 @@ export default function ConsultantBookings() {
                   <p className="text-xs text-gray-600">
                     {b.requestedStartAt ? new Date(b.requestedStartAt).toLocaleString() : '—'}
                   </p>
+                  {b.rejectionReason && (
+                    <p className="text-xs text-red-400 mt-1">Reason: {b.rejectionReason}</p>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -127,7 +180,7 @@ export default function ConsultantBookings() {
                         Accept
                       </button>
                       <button
-                        onClick={() => action(rejectBooking, b.id)}
+                        onClick={() => setRejectTarget(b.id)}
                         className="text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         Reject
