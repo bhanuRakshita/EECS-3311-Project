@@ -67,6 +67,9 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
         if (configOpt.isPresent()) {
             PricingStrategyConfig config = configOpt.get();
             PricingStrategy strategy = pricingStrategyFactory.getStrategy(config.getStrategyType());
+            
+            // Set the original price before modifying the base price
+            service.setOriginalPrice(service.getBasePrice());
             java.math.BigDecimal newPrice = strategy.calculatePrice(service.getBasePrice(), config);
             
             service.setBasePrice(newPrice);

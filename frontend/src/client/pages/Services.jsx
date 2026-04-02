@@ -86,11 +86,18 @@ function ConsultantPanel({ service, onBook }) {
               </p>
               <p className="text-xs text-gray-500">{c.email}</p>
             </div>
-            <div className="ml-auto text-right">
+            <div className="ml-auto text-right flex flex-col items-end">
               <p className="text-sm font-semibold text-gray-100">
-                ${Number(service.basePrice).toFixed(2)}
+                {service.originalPrice && Number(service.originalPrice) !== Number(service.basePrice) ? (
+                  <>
+                    <span className="text-xs text-gray-500 line-through mr-2">${Number(service.originalPrice).toFixed(2)}</span>
+                    <span className="text-green-400">${Number(service.basePrice).toFixed(2)}</span>
+                  </>
+                ) : (
+                  <span>${Number(service.basePrice).toFixed(2)}</span>
+                )}
               </p>
-              <p className="text-xs text-gray-500">{service.durationMinutes} min</p>
+              <p className="text-xs text-gray-500 mt-1">{service.durationMinutes} min</p>
             </div>
           </div>
 
@@ -155,7 +162,14 @@ function ServiceCard({ svc, expanded, onToggle, onBook, loggedIn, onLoginPrompt 
         )}
         <div className="flex items-center gap-4 text-sm mb-4">
           <span className="text-gray-500">⏱ {svc.durationMinutes} min</span>
-          <span className="font-semibold text-gray-200">${Number(svc.basePrice).toFixed(2)}</span>
+          {svc.originalPrice && Number(svc.originalPrice) !== Number(svc.basePrice) ? (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-500 line-through">${Number(svc.originalPrice).toFixed(2)}</span>
+              <span className="font-semibold text-green-400">${Number(svc.basePrice).toFixed(2)}</span>
+            </div>
+          ) : (
+            <span className="font-semibold text-gray-200">${Number(svc.basePrice).toFixed(2)}</span>
+          )}
         </div>
         <button
           onClick={() => loggedIn ? onToggle() : onLoginPrompt()}
