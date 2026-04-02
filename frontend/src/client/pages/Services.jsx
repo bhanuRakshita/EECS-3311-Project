@@ -88,7 +88,7 @@ function ConsultantPanel({ service, onBook }) {
             </div>
             <div className="ml-auto text-right flex flex-col items-end">
               <p className="text-sm font-semibold text-gray-100">
-                {service.originalPrice && Number(service.originalPrice) !== Number(service.basePrice) ? (
+                {service.originalPrice && Number(service.originalPrice) > Number(service.basePrice) ? (
                   <>
                     <span className="text-xs text-gray-500 line-through mr-2">${Number(service.originalPrice).toFixed(2)}</span>
                     <span className="text-green-400">${Number(service.basePrice).toFixed(2)}</span>
@@ -162,7 +162,7 @@ function ServiceCard({ svc, expanded, onToggle, onBook, loggedIn, onLoginPrompt 
         )}
         <div className="flex items-center gap-4 text-sm mb-4">
           <span className="text-gray-500">⏱ {svc.durationMinutes} min</span>
-          {svc.originalPrice && Number(svc.originalPrice) !== Number(svc.basePrice) ? (
+          {svc.originalPrice && Number(svc.originalPrice) > Number(svc.basePrice) ? (
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 line-through">${Number(svc.originalPrice).toFixed(2)}</span>
               <span className="font-semibold text-green-400">${Number(svc.basePrice).toFixed(2)}</span>

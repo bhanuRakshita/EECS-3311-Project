@@ -148,7 +148,7 @@ export default function AdminServices() {
                     {svc.description && <p className="text-sm text-gray-500">{svc.description}</p>}
                   </div>
                   <div className="text-right flex flex-col items-end flex-shrink-0">
-                    {svc.originalPrice && Number(svc.originalPrice) !== Number(svc.basePrice) ? (
+                    {svc.originalPrice && Number(svc.originalPrice) > Number(svc.basePrice) ? (
                       <>
                         <p className="text-xs text-gray-500 line-through">${Number(svc.originalPrice).toFixed(2)}</p>
                         <p className="font-semibold text-green-400">${Number(svc.basePrice).toFixed(2)}</p>

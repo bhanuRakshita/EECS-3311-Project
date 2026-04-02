@@ -70,7 +70,7 @@ export default function Book() {
           {service && (
             <div className="flex justify-between items-center text-sm border-t border-[#2e303a] pt-3">
               <span className="text-gray-500">Price</span>
-              {service.originalPrice && Number(service.originalPrice) !== Number(service.basePrice) ? (
+              {service.originalPrice && Number(service.originalPrice) > Number(service.basePrice) ? (
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 line-through">${Number(service.originalPrice).toFixed(2)}</span>
                   <span className="text-green-400 font-semibold">${Number(service.basePrice).toFixed(2)}</span>
