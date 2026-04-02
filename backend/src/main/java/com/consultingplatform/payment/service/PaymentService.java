@@ -174,6 +174,21 @@ public class PaymentService {
         return result;
     }
 
+    @Transactional
+    public void processRefund(Long bookingId, double refundPercentage) {
+        if (refundPercentage <= 0) {
+            return;
+        }
+
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        for (Payment payment : payments) {
+            if (payment.getStatus() == PaymentStatus.SUCCESS) {
+                payment.setStatus(PaymentStatus.REFUNDED);
+                paymentRepository.save(payment);
+            }
+        }
+    }
+
     private PaymentMethod buildPaymentMethod(Long clientId, PaymentMethodDto dto, PaymentType type) {
         PaymentMethod method = new PaymentMethod();
         method.setClientId(clientId);
