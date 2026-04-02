@@ -23,6 +23,8 @@ public class ConsultingServiceDto {
     @Positive(message = "Base price must be greater than zero")
     private BigDecimal basePrice;
 
+    private BigDecimal originalPrice;
+
     //Getters and Setters
     public String getServiceType() { return serviceType; }
     public void setServiceType(String serviceType) { this.serviceType = serviceType; }
@@ -38,4 +40,7 @@ public class ConsultingServiceDto {
     
     public BigDecimal getBasePrice() { return basePrice; }
     public void setBasePrice(BigDecimal basePrice) { this.basePrice = basePrice; }
+
+    public BigDecimal getOriginalPrice() { return originalPrice; }
+    public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
 }

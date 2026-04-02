@@ -1,5 +1,7 @@
 package com.consultingplatform.notification.service;
 
+import com.consultingplatform.admin.domain.NotificationSettingsConfig;
+import com.consultingplatform.admin.service.SystemPolicyService;
 import com.consultingplatform.booking.domain.Booking;
 import com.consultingplatform.notification.domain.Notification;
 import com.consultingplatform.notification.domain.NotificationType;
@@ -17,8 +19,19 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SystemPolicyService systemPolicyService;
+
+    private boolean isNotificationSystemEnabled() {
+        return systemPolicyService.getPolicyConfig("NOTIFICATION_SETTINGS", NotificationSettingsConfig.class)
+                .map(NotificationSettingsConfig::isEnabled)
+                .orElse(true); // Default to ON if no policy is set
+    }
 
     public void sendBookingCancelledNotifications(Booking booking) {
+        if (!isNotificationSystemEnabled()) {
+            return;
+        }
+
         String payload = buildBookingCancelledPayload(booking);
 
         Notification clientNotification = Notification.builder()
@@ -38,6 +51,10 @@ public class NotificationService {
     }
 
     public void sendBookingRejectedNotificationToClient(Booking booking, String reason) {
+        if (!isNotificationSystemEnabled()) {
+            return;
+        }
+
         String payload = buildBookingRejectedPayload(booking, reason);
 
         Notification clientNotification = Notification.builder()
