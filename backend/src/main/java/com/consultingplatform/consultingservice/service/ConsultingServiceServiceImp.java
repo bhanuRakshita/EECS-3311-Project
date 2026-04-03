@@ -9,6 +9,9 @@ import com.consultingplatform.consultingservice.repository.ConsultingServiceRepo
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategy;
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategyFactory;
 import com.consultingplatform.consultingservice.web.dto.ConsultingServiceDto;
+import com.consultingplatform.admin.service.ResourceNotFoundException;
+
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,8 +41,8 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
         service.setDescription(serviceDto.getDescription());
         service.setDurationMinutes(serviceDto.getDurationMinutes());
         service.setBasePrice(serviceDto.getBasePrice());
-        service.setIsActive(true); 
-        
+        service.setIsActive(serviceDto.getIsActive() != null ? serviceDto.getIsActive() : Boolean.TRUE);
+
         return consultingServiceRepository.save(service);
     }
     
@@ -59,6 +62,36 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
         return consultingServiceRepository.findById(id)
                 .map(this::applyPricingStrategy)
                 .orElse(null);
+    }
+
+    @Override
+    public List<ConsultingService> getAllServicesForAdmin() {
+        return consultingServiceRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+    }
+
+    @Override
+    public ConsultingService updateService(Long id, ConsultingServiceDto serviceDto) {
+        ConsultingService service = consultingServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
+
+        service.setServiceType(serviceDto.getServiceType());
+        service.setTitle(serviceDto.getTitle());
+        service.setDescription(serviceDto.getDescription());
+        service.setDurationMinutes(serviceDto.getDurationMinutes());
+        service.setBasePrice(serviceDto.getBasePrice());
+        if (serviceDto.getIsActive() != null) {
+            service.setIsActive(serviceDto.getIsActive());
+        }
+
+        return consultingServiceRepository.save(service);
+    }
+
+    @Override
+    public void deleteService(Long id) {
+        ConsultingService service = consultingServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
+        service.setIsActive(false);
+        consultingServiceRepository.save(service);
     }
 
     private ConsultingService applyPricingStrategy(ConsultingService service) {

@@ -95,4 +95,7 @@ export const getPendingConsultants = () => api.get('/api/admin/consultants/pendi
 export const approveConsultant = (consultantId, data) =>
   api.post(`/api/admin/consultants/${consultantId}/approval`, data)
 export const updatePolicy = (key, data) => api.put(`/api/admin/policies/${key}`, data)
+export const getAdminServices = () => api.get('/api/admin/services')
 export const createAdminService = (data) => api.post('/api/admin/services', data)
+export const updateAdminService = (id, data) => api.put(`/api/admin/services/${id}`, data)
+export const deleteAdminService = (id) => api.delete(`/api/admin/services/${id}`)
