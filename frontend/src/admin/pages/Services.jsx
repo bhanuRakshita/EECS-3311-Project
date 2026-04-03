@@ -147,9 +147,16 @@ export default function AdminServices() {
                     </div>
                     {svc.description && <p className="text-sm text-gray-500">{svc.description}</p>}
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-gray-200">${Number(svc.basePrice).toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">{svc.durationMinutes} min</p>
+                  <div className="text-right flex flex-col items-end flex-shrink-0">
+                    {svc.originalPrice && Number(svc.originalPrice) > Number(svc.basePrice) ? (
+                      <>
+                        <p className="text-xs text-gray-500 line-through">${Number(svc.originalPrice).toFixed(2)}</p>
+                        <p className="font-semibold text-green-400">${Number(svc.basePrice).toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <p className="font-semibold text-gray-200">${Number(svc.basePrice).toFixed(2)}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">{svc.durationMinutes} min</p>
                   </div>
                 </div>
               </div>

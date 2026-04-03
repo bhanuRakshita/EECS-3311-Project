@@ -7,12 +7,17 @@ import com.consultingplatform.consultant.domain.AvailabilitySlot;
 import com.consultingplatform.consultant.repository.AvailabilitySlotRepository;
 import com.consultingplatform.notification.service.NotificationService;
 
+import com.consultingplatform.admin.domain.RefundPolicyConfig;
+import com.consultingplatform.admin.service.SystemPolicyService;
+import com.consultingplatform.payment.service.PaymentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.consultingplatform.security.CustomUserDetails;
 import java.util.List;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -20,13 +25,19 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final NotificationService notificationService;
+    private final SystemPolicyService systemPolicyService;
+    private final PaymentService paymentService;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                             AvailabilitySlotRepository availabilitySlotRepository,
-                            NotificationService notificationService) {
+                            NotificationService notificationService,
+                            SystemPolicyService systemPolicyService,
+                            PaymentService paymentService) {
         this.bookingRepository = bookingRepository;
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.notificationService = notificationService;
+        this.systemPolicyService = systemPolicyService;
+        this.paymentService = paymentService;
     }
 
     @Override
@@ -89,6 +100,31 @@ public class BookingServiceImpl implements BookingService {
 
         // Use State Pattern
         booking.cancel();
+
+        // Calculate and process refund
+        if (booking.getRequestedStartAt() != null) {
+            long hoursUntilStart = ChronoUnit.HOURS.between(OffsetDateTime.now(), booking.getRequestedStartAt());
+            RefundPolicyConfig policyConfig = systemPolicyService.getPolicyConfig("REFUND_POLICY", RefundPolicyConfig.class).orElse(null);
+            double refundPercentage = 0.0;
+            
+            if (policyConfig != null && policyConfig.getTiers() != null) {
+                RefundPolicyConfig.RefundTier applicableTier = policyConfig.getTiers().stream()
+                        .filter(tier -> hoursUntilStart >= tier.getHoursBefore())
+                        .max(java.util.Comparator.comparingInt(RefundPolicyConfig.RefundTier::getHoursBefore))
+                        .orElse(null);
+                
+                if (applicableTier != null) {
+                    refundPercentage = applicableTier.getRefundPercentage();
+                }
+            } else {
+                // Default refund percentage if no config
+                refundPercentage = 1.0;
+            }
+            
+            if (refundPercentage > 0) {
+                paymentService.processRefund(bookingId, refundPercentage);
+            }
+        }
 
         // Restore slot availability when booking is cancelled
         if (booking.getAvailabilitySlotId() != null) {

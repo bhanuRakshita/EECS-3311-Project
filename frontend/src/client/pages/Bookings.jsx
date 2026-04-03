@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getClientBookings, cancelBooking, getUsers, getServices } from '../../shared/lib/api'
+import { getClientBookings, cancelBooking, getUsers, getServices, getPolicy, getPaymentHistory } from '../../shared/lib/api'
 import { getUserId } from '../../shared/lib/auth'
 
 const STATUS_COLORS = {
@@ -16,16 +16,20 @@ export default function ClientBookings() {
   const [bookings, setBookings] = useState([])
   const [usersMap, setUsersMap] = useState({})
   const [servicesMap, setServicesMap] = useState({})
+  const [paymentsMap, setPaymentsMap] = useState({})
+  const [refundPolicy, setRefundPolicy] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   const load = async () => {
     const clientId = getUserId()
     try {
-      const [bookingsRes, usersRes, servicesRes] = await Promise.all([
+      const [bookingsRes, usersRes, servicesRes, policyRes, paymentsRes] = await Promise.all([
         getClientBookings(clientId),
         getUsers(),
         getServices(),
+        getPolicy('REFUND_POLICY').catch(() => ({ data: null })),
+        getPaymentHistory(clientId).catch(() => ({ data: [] }))
       ])
       setBookings(bookingsRes.data)
       const uMap = {}
@@ -34,6 +38,15 @@ export default function ClientBookings() {
       const sMap = {}
       for (const s of servicesRes.data) sMap[s.id] = s
       setServicesMap(sMap)
+      const pMap = {}
+      for (const p of (paymentsRes.data || [])) {
+        if (p.bookingId) pMap[p.bookingId] = p
+      }
+      setPaymentsMap(pMap)
+      
+      if (policyRes.data && policyRes.data.policyValue) {
+        setRefundPolicy(JSON.parse(policyRes.data.policyValue))
+      }
     } catch {
       setBookings([])
     } finally {
@@ -43,10 +56,30 @@ export default function ClientBookings() {
 
   useEffect(() => { load() }, [])
 
-  const handleCancel = async (id) => {
-    if (!confirm('Cancel this booking?')) return
+  const getRefundEstimate = (booking) => {
+    if (!refundPolicy || !refundPolicy.tiers || !booking.requestedStartAt) return 100
+
+    const hoursUntilStart = (new Date(booking.requestedStartAt) - new Date()) / (1000 * 60 * 60)
+    let refundPercentage = 0
+
+    const applicableTiers = refundPolicy.tiers.filter(tier => hoursUntilStart >= tier.hoursBefore)
+    if (applicableTiers.length > 0) {
+      const bestTier = applicableTiers.reduce((max, tier) => 
+        tier.hoursBefore > max.hoursBefore ? tier : max
+      )
+      refundPercentage = bestTier.refundPercentage * 100
+    }
+
+    return refundPercentage
+  }
+
+  const handleCancel = async (booking) => {
+    const refundEstimate = booking.status === 'PAID' ? getRefundEstimate(booking) : 100
+    const msg = booking.status === 'PAID' ? `Cancel this booking? Based on our policy, you will receive a ${refundEstimate}% refund for this paid booking.` : 'Cancel this booking?'
+    
+    if (!confirm(msg)) return
     try {
-      await cancelBooking(id)
+      await cancelBooking(booking.id)
       load()
     } catch (err) {
       alert(err.response?.data?.message ?? 'Could not cancel booking')
@@ -76,6 +109,17 @@ export default function ClientBookings() {
         </div>
       )}
 
+      {refundPolicy && refundPolicy.tiers && (
+        <div className="mb-6 bg-[#1F2023] rounded-xl border border-[#2e303a] p-4 text-sm">
+          <h3 className="font-semibold text-white mb-2">Refund Policy</h3>
+          <ul className="text-gray-400 space-y-1">
+            {refundPolicy.tiers.sort((a, b) => b.hoursBefore - a.hoursBefore).map((tier, idx) => (
+              <li key={idx}>Cancel at least {tier.hoursBefore}h before: {tier.refundPercentage * 100}% refund</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="space-y-3">
         {bookings.map((b) => (
           <div key={b.id} className="bg-[#1F2023] rounded-xl border border-[#2e303a] px-5 py-4 flex items-center justify-between">
@@ -85,11 +129,19 @@ export default function ClientBookings() {
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] ?? 'bg-gray-500/20 text-gray-400'}`}>
                   {b.status}
                 </span>
+                {b.status === 'CANCELLED' && paymentsMap[b.id]?.refundAmount != null && (
+                  <span className="text-xs text-gray-400">
+                    Cancelled with {(paymentsMap[b.id].refundAmount / paymentsMap[b.id].amount * 100).toFixed(0)}% refund
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-400">with {consultantName(b.consultantId)}</p>
               <p className="text-xs text-gray-600">
                 {b.requestedStartAt ? new Date(b.requestedStartAt).toLocaleString() : '—'}
               </p>
+              {b.rejectionReason && (
+                <p className="text-xs text-red-400 mt-1">Reason: {b.rejectionReason}</p>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -101,9 +153,9 @@ export default function ClientBookings() {
                   Pay
                 </button>
               )}
-              {['REQUESTED', 'CONFIRMED'].includes(b.status) && (
+              {['REQUESTED', 'CONFIRMED', 'PAID'].includes(b.status) && (
                 <button
-                  onClick={() => handleCancel(b.id)}
+                  onClick={() => handleCancel(b)}
                   className="text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   Cancel

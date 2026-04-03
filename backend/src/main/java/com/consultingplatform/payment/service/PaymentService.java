@@ -93,7 +93,7 @@ public class PaymentService {
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             booking.setStatus("PAID");
             bookingRepository.save(booking);
-            notificationService.sendPaymentSuccessNotifications(booking);
+            notificationService.sendPaymentSuccessNotification(booking);
         }
 
         return toResponseDto(payment);
@@ -177,6 +177,24 @@ public class PaymentService {
         return result;
     }
 
+    @Transactional
+    public void processRefund(Long bookingId, double refundPercentage) {
+        if (refundPercentage <= 0) {
+            return;
+        }
+
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        for (Payment payment : payments) {
+            if (payment.getStatus() == PaymentStatus.SUCCESS) {
+                payment.setStatus(PaymentStatus.REFUNDED);
+                java.math.BigDecimal refundAmount = payment.getAmount().multiply(java.math.BigDecimal.valueOf(refundPercentage)).setScale(2, java.math.RoundingMode.HALF_UP);
+                payment.setRefundAmount(refundAmount);
+                payment.setRefundedAt(java.time.LocalDateTime.now());
+                paymentRepository.save(payment);
+            }
+        }
+    }
+
     private PaymentMethod buildPaymentMethod(Long clientId, PaymentMethodDto dto, PaymentType type) {
         PaymentMethod method = new PaymentMethod();
         method.setClientId(clientId);
@@ -214,6 +232,8 @@ public class PaymentService {
         dto.setPaymentType(payment.getStrategyType());
         dto.setTimestamp(payment.getTimestamp());
         dto.setFailureReason(payment.getFailureReason());
+        dto.setRefundAmount(payment.getRefundAmount());
+        dto.setRefundedAt(payment.getRefundedAt());
         return dto;
     }
 }
