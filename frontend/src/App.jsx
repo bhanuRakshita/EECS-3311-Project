@@ -12,7 +12,7 @@ import Book from './client/pages/Book'
 import ClientBookings from './client/pages/Bookings'
 import ClientPayments from './client/pages/Payments'
 
-import ConsultantServices from './consultant/pages/Services'
+import ConsultantDashboard from './consultant/pages/Dashboard'
 import ConsultantAvailability from './consultant/pages/Availability'
 import ConsultantBookings from './consultant/pages/Bookings'
 
@@ -20,14 +20,14 @@ import AdminApprovals from './admin/pages/Approvals'
 import AdminPolicies from './admin/pages/Policies'
 import AdminServices from './admin/pages/Services'
 import ChatWidget from './shared/components/ChatWidget'
-import Chatbot from './pages/Chatbot'
+import Landing from './pages/Landing'
 
 function RootRedirect() {
   const { isLoggedIn, roles } = useAuth()
-  if (!isLoggedIn) return <Navigate to="/login" replace />
+  if (!isLoggedIn) return <Landing />
   const role = roles[0]?.toUpperCase()
   if (role === 'ADMIN') return <Navigate to="/admin/approvals" replace />
-  if (role === 'CONSULTANT') return <Navigate to="/consultant/bookings" replace />
+  if (role === 'CONSULTANT') return <Navigate to="/consultant/dashboard" replace />
   return <Navigate to="/client/services" replace />
 }
 
@@ -63,7 +63,8 @@ export default function App() {
             <Route path="/client/payments" element={<ProtectedRoute role="CLIENT"><ClientPayments /></ProtectedRoute>} />
 
             {/* Consultant */}
-            <Route path="/consultant/services" element={<ConsultantRoute><ConsultantServices /></ConsultantRoute>} />
+            <Route path="/consultant/services" element={<Navigate to="/consultant/availability" replace />} />
+            <Route path="/consultant/dashboard" element={<ConsultantRoute><ConsultantDashboard /></ConsultantRoute>} />
             <Route path="/consultant/availability" element={<ConsultantRoute><ConsultantAvailability /></ConsultantRoute>} />
             <Route path="/consultant/bookings" element={<ConsultantRoute><ConsultantBookings /></ConsultantRoute>} />
 
@@ -72,8 +73,7 @@ export default function App() {
             <Route path="/admin/policies" element={<ProtectedRoute role="ADMIN"><AdminPolicies /></ProtectedRoute>} />
             <Route path="/admin/services" element={<ProtectedRoute role="ADMIN"><AdminServices /></ProtectedRoute>} />
 
-            {/* Chatbot */}
-            <Route path="/chatbot" element={<Chatbot />} />
+            <Route path="/chatbot" element={<Navigate to="/" replace />} />
 
 <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

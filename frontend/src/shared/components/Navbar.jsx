@@ -188,8 +188,9 @@ export default function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6">
-        <Link to="/services" className="text-sm text-gray-400 hover:text-white transition-colors">Browse</Link>
-        <Link to="/chatbot" className="text-sm text-gray-400 hover:text-white transition-colors">AI Assistant</Link>
+        {!isConsultant && (
+          <Link to="/services" className="text-sm text-gray-400 hover:text-white transition-colors">Browse</Link>
+        )}
         {isClient && (
           <>
             <Link to="/client/bookings" className="text-sm text-gray-400 hover:text-white transition-colors">My Bookings</Link>
@@ -198,7 +199,7 @@ export default function Navbar() {
         )}
         {isConsultant && (
           <>
-            <Link to="/consultant/services" className="text-sm text-gray-400 hover:text-white transition-colors">My Services</Link>
+            <Link to="/consultant/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Dashboard</Link>
             <Link to="/consultant/availability" className="text-sm text-gray-400 hover:text-white transition-colors">Availability</Link>
             <Link to="/consultant/bookings" className="text-sm text-gray-400 hover:text-white transition-colors">Bookings</Link>
           </>

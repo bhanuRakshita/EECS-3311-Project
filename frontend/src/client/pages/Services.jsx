@@ -109,7 +109,7 @@ function ConsultantPanel({ service, onBook }) {
             {c.slots.slice(0, 4).map((slot) => (
               <button
                 key={slot.id}
-                onClick={() => onBook(slot, c.id, service)}
+                onClick={() => onBook(slot, c, service)}
                 className="flex items-center justify-between bg-[#1F2023] hover:bg-indigo-600/10 border border-[#333333] hover:border-indigo-500/50 rounded-lg px-3 py-2 transition-colors text-left group"
               >
                 <div>
@@ -207,8 +207,8 @@ export default function ClientServices() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleBook = (slot, consultantId, service) => {
-    navigate('/client/book', { state: { slot, consultantId, service } })
+  const handleBook = (slot, consultant, service) => {
+    navigate('/client/book', { state: { slot, consultant, service } })
   }
 
   const handleToggle = (id) => {
