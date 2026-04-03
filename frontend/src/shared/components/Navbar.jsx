@@ -188,7 +188,7 @@ export default function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6">
-        {!isConsultant && (
+        {isClient && (
           <Link to="/services" className="text-sm text-gray-400 hover:text-white transition-colors">Browse</Link>
         )}
         {isClient && (
