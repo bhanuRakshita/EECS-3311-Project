@@ -25,6 +25,9 @@ public class ConsultingServiceDto {
 
     private BigDecimal originalPrice;
 
+    /** Optional. On create, defaults to true when omitted. On update, omit to leave unchanged. */
+    private Boolean isActive;
+
     //Getters and Setters
     public String getServiceType() { return serviceType; }
     public void setServiceType(String serviceType) { this.serviceType = serviceType; }
@@ -43,4 +46,7 @@ public class ConsultingServiceDto {
 
     public BigDecimal getOriginalPrice() { return originalPrice; }
     public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
+
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

@@ -134,12 +134,14 @@ public class ConsultantServiceImpl implements ConsultantService {
     }
 
     @Override
+    @Transactional
     @PreAuthorize("hasRole('CONSULTANT') and #consultantId == principal.id")
     public ConsultantBookingResponse acceptBooking(Long consultantId, Long bookingId) {
         Booking booking = getBookingForConsultant(consultantId, bookingId);
         booking.accept();
         booking.setConsultantDecidedAt(OffsetDateTime.now());
         Booking saved = bookingRepository.save(booking);
+        notificationService.sendBookingAcceptedNotificationToClient(saved);
         return toBookingResponse(saved);
     }
 

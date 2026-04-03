@@ -9,6 +9,11 @@ import com.consultingplatform.consultingservice.repository.ConsultingServiceRepo
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategy;
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategyFactory;
 import com.consultingplatform.consultingservice.web.dto.ConsultingServiceDto;
+import com.consultingplatform.admin.service.ConflictException;
+import com.consultingplatform.admin.service.ResourceNotFoundException;
+import com.consultingplatform.booking.repository.BookingRepository;
+
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,13 +25,16 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
     private final ConsultingServiceRepository consultingServiceRepository;
     private final SystemPolicyService systemPolicyService;
     private final PricingStrategyFactory pricingStrategyFactory;
+    private final BookingRepository bookingRepository;
 
     public ConsultingServiceServiceImp(ConsultingServiceRepository consultingServiceRepository,
                                        SystemPolicyService systemPolicyService,
-                                       PricingStrategyFactory pricingStrategyFactory) {
+                                       PricingStrategyFactory pricingStrategyFactory,
+                                       BookingRepository bookingRepository) {
         this.consultingServiceRepository = consultingServiceRepository;
         this.systemPolicyService = systemPolicyService;
         this.pricingStrategyFactory = pricingStrategyFactory;
+        this.bookingRepository = bookingRepository;
     }
     
     @Override
@@ -38,8 +46,8 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
         service.setDescription(serviceDto.getDescription());
         service.setDurationMinutes(serviceDto.getDurationMinutes());
         service.setBasePrice(serviceDto.getBasePrice());
-        service.setIsActive(true); 
-        
+        service.setIsActive(serviceDto.getIsActive() != null ? serviceDto.getIsActive() : Boolean.TRUE);
+
         return consultingServiceRepository.save(service);
     }
     
@@ -59,6 +67,40 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
         return consultingServiceRepository.findById(id)
                 .map(this::applyPricingStrategy)
                 .orElse(null);
+    }
+
+    @Override
+    public List<ConsultingService> getAllServicesForAdmin() {
+        return consultingServiceRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+    }
+
+    @Override
+    public ConsultingService updateService(Long id, ConsultingServiceDto serviceDto) {
+        ConsultingService service = consultingServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
+
+        service.setServiceType(serviceDto.getServiceType());
+        service.setTitle(serviceDto.getTitle());
+        service.setDescription(serviceDto.getDescription());
+        service.setDurationMinutes(serviceDto.getDurationMinutes());
+        service.setBasePrice(serviceDto.getBasePrice());
+        if (serviceDto.getIsActive() != null) {
+            service.setIsActive(serviceDto.getIsActive());
+        }
+
+        return consultingServiceRepository.save(service);
+    }
+
+    @Override
+    public void deleteService(Long id) {
+        if (!consultingServiceRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Consulting service not found");
+        }
+        if (bookingRepository.countByServiceId(id) > 0) {
+            throw new ConflictException(
+                    "Cannot delete this service while bookings reference it. Deactivate it instead, or resolve those bookings first.");
+        }
+        consultingServiceRepository.deleteById(id);
     }
 
     private ConsultingService applyPricingStrategy(ConsultingService service) {

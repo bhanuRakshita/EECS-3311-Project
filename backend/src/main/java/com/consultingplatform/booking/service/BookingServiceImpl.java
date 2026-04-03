@@ -98,29 +98,30 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        boolean wasPaid = "PAID".equals(booking.getStatus());
+
         // Use State Pattern
         booking.cancel();
 
-        // Calculate and process refund
+        // Calculate and process refund (percentage also used for client refund notification when wasPaid)
+        double refundPercentage = 0.0;
         if (booking.getRequestedStartAt() != null) {
             long hoursUntilStart = ChronoUnit.HOURS.between(OffsetDateTime.now(), booking.getRequestedStartAt());
             RefundPolicyConfig policyConfig = systemPolicyService.getPolicyConfig("REFUND_POLICY", RefundPolicyConfig.class).orElse(null);
-            double refundPercentage = 0.0;
-            
+
             if (policyConfig != null && policyConfig.getTiers() != null) {
                 RefundPolicyConfig.RefundTier applicableTier = policyConfig.getTiers().stream()
                         .filter(tier -> hoursUntilStart >= tier.getHoursBefore())
                         .max(java.util.Comparator.comparingInt(RefundPolicyConfig.RefundTier::getHoursBefore))
                         .orElse(null);
-                
+
                 if (applicableTier != null) {
                     refundPercentage = applicableTier.getRefundPercentage();
                 }
             } else {
-                // Default refund percentage if no config
-                refundPercentage = 1.0;
+                refundPercentage = 100.0;
             }
-            
+
             if (refundPercentage > 0) {
                 paymentService.processRefund(bookingId, refundPercentage);
             }
@@ -137,6 +138,9 @@ public class BookingServiceImpl implements BookingService {
 
         Booking cancelled = bookingRepository.save(booking);
         notificationService.sendBookingCancelledNotifications(cancelled);
+        if (wasPaid) {
+            notificationService.sendPaidBookingCancelledRefundNotificationToClient(cancelled, refundPercentage);
+        }
         return cancelled;
     }
 
