@@ -118,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             } else {
                 // Default refund percentage if no config
-                refundPercentage = 100.0;
+                refundPercentage = 1.0;
             }
             
             if (refundPercentage > 0) {
