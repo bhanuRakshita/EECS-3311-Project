@@ -12,6 +12,7 @@ const STATUS_COLORS = {
   CANCELLED: 'bg-red-500/10 text-red-400',
 }
 
+const ACTIVE_STATUSES = ['REQUESTED', 'CONFIRMED', 'PAID']
 const FILTERS = ['ALL', 'REQUESTED', 'CONFIRMED', 'PAID', 'COMPLETED', 'REJECTED', 'CANCELLED']
 
 export default function ClientBookings() {
@@ -20,7 +21,7 @@ export default function ClientBookings() {
   const [servicesMap, setServicesMap] = useState({})
   const [paymentsMap, setPaymentsMap] = useState({})
   const [refundPolicy, setRefundPolicy] = useState(null)
-  const [filter, setFilter] = useState('ALL')
+  const [filter, setFilter] = useState('ACTIVE')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -100,7 +101,11 @@ export default function ClientBookings() {
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading…</div>
 
-  const filtered = filter === 'ALL' ? bookings : bookings.filter((b) => b.status === filter)
+  const filtered = filter === 'ACTIVE'
+    ? [...bookings].filter((b) => ACTIVE_STATUSES.includes(b.status)).sort((a, b) => new Date(a.requestedStartAt) - new Date(b.requestedStartAt))
+    : filter === 'ALL'
+    ? bookings
+    : bookings.filter((b) => b.status === filter)
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -108,26 +113,26 @@ export default function ClientBookings() {
 
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => setFilter('ALL')}
+          onClick={() => setFilter('ACTIVE')}
           className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${
-            filter === 'ALL'
+            filter === 'ACTIVE'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#2e303a] text-gray-400 hover:bg-[#3a3c48] hover:text-gray-200'
           }`}
         >
-          All
+          Active
         </button>
         <select
-          value={filter === 'ALL' ? '' : filter}
-          onChange={(e) => setFilter(e.target.value || 'ALL')}
+          value={filter === 'ACTIVE' ? '' : filter}
+          onChange={(e) => setFilter(e.target.value || 'ACTIVE')}
           className="bg-[#2e303a] border border-[#444] text-sm text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
         >
           <option value="">Filter by status…</option>
-          {FILTERS.filter((f) => f !== 'ALL').map((f) => (
+          {FILTERS.map((f) => (
             <option key={f} value={f}>{f.charAt(0) + f.slice(1).toLowerCase()}</option>
           ))}
         </select>
-        {filter !== 'ALL' && (
+        {filter !== 'ACTIVE' && (
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[filter] ?? 'bg-gray-500/20 text-gray-400'}`}>
             {filter}
           </span>
@@ -138,6 +143,8 @@ export default function ClientBookings() {
         <div className="text-center py-12 text-gray-500">
           {bookings.length === 0 ? (
             <>No bookings yet.{' '}<button className="text-indigo-400 hover:underline" onClick={() => navigate('/client/services')}>Browse services</button></>
+          ) : filter === 'ACTIVE' ? (
+            <>No active bookings.{' '}<button className="text-indigo-400 hover:underline" onClick={() => setFilter('ALL')}>View all bookings</button></>
           ) : (
             'No bookings match this filter.'
           )}
