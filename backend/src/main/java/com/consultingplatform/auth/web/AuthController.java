@@ -41,20 +41,26 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getUsernameOrEmail(), req.getPassword())
-        );
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(req.getUsernameOrEmail(), req.getPassword())
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        Object principal = auth.getPrincipal();
-        if (!(principal instanceof CustomUserDetails)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Invalid authentication principal");
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            Object principal = auth.getPrincipal();
+            if (!(principal instanceof CustomUserDetails)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Invalid authentication principal");
+            }
+            CustomUserDetails cud = (CustomUserDetails) principal;
+            String token = jwtTokenUtil.generateToken(cud);
+
+            AuthResponse resp = new AuthResponse(token, cud.getId(), cud.getUsername());
+            return ResponseEntity.ok(resp);
+        } catch (org.springframework.security.authentication.DisabledException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account is disabled, inactive, or pending approval."));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
         }
-        CustomUserDetails cud = (CustomUserDetails) principal;
-        String token = jwtTokenUtil.generateToken(cud);
-
-        AuthResponse resp = new AuthResponse(token, cud.getId(), cud.getUsername());
-        return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/logout")
