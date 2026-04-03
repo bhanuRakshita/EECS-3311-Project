@@ -35,23 +35,59 @@ public class NotificationService {
         if (!isNotificationSystemEnabled()) {
             return;
         }
+        Long clientId = booking.getClientId();
+        Long consultantId = booking.getConsultantId();
+        if (clientId == null || consultantId == null) {
+            return;
+        }
 
-        String payload = buildBookingCancelledPayload(booking);
+        String clientPayload = buildBookingCancelledPayloadForClient(booking);
+        String consultantPayload = buildBookingCancelledPayloadForConsultant(booking);
 
+        notificationRepository.save(Notification.builder()
+                .userId(clientId)
+                .notificationType(NotificationType.BOOKING_CANCELLED)
+                .payload(clientPayload)
+                .build());
+
+        if (!clientId.equals(consultantId)) {
+            notificationRepository.save(Notification.builder()
+                    .userId(consultantId)
+                    .notificationType(NotificationType.BOOKING_CANCELLED)
+                    .payload(consultantPayload)
+                    .build());
+        }
+    }
+
+    /**
+     * Client-only: booking was paid, then cancelled — explain refund outcome per policy percentage.
+     */
+    public void sendPaidBookingCancelledRefundNotificationToClient(Booking booking, double refundPercentage) {
+        if (!isNotificationSystemEnabled()) {
+            return;
+        }
+
+        String payload = buildPaidCancellationRefundPayload(booking, refundPercentage);
+        Notification notification = Notification.builder()
+                .userId(booking.getClientId())
+                .notificationType(NotificationType.PAYMENT_REFUNDED)
+                .payload(payload)
+                .build();
+        notificationRepository.save(notification);
+    }
+
+    public void sendBookingAcceptedNotificationToClient(Booking booking) {
+        if (!isNotificationSystemEnabled()) {
+            return;
+        }
+
+        String payload = buildBookingAcceptedPayload(booking);
         Notification clientNotification = Notification.builder()
                 .userId(booking.getClientId())
-                .notificationType(NotificationType.BOOKING_CANCELLED)
+                .notificationType(NotificationType.BOOKING_CONFIRMED)
                 .payload(payload)
                 .build();
-
-        Notification consultantNotification = Notification.builder()
-                .userId(booking.getConsultantId())
-                .notificationType(NotificationType.BOOKING_CANCELLED)
-                .payload(payload)
-                .build();
-
         notificationRepository.save(clientNotification);
-        notificationRepository.save(consultantNotification);
     }
 
     public void sendBookingRejectedNotificationToClient(Booking booking, String reason) {
@@ -133,8 +169,33 @@ public class NotificationService {
         notificationRepository.markAllReadByUserId(userId);
     }
 
-    private String buildBookingCancelledPayload(Booking booking) {
-        return getServiceName(booking) + " was cancelled.";
+    private String buildBookingCancelledPayloadForClient(Booking booking) {
+        String serviceName = getServiceName(booking);
+        return "Your booking for " + serviceName + " was cancelled. The consultant has been notified.";
+    }
+
+    private String buildBookingCancelledPayloadForConsultant(Booking booking) {
+        String serviceName = getServiceName(booking);
+        String clientLabel = getUserDisplayName(booking.getClientId(), "the client");
+        return "The booking for " + serviceName + " with " + clientLabel + " was cancelled. The client has been notified.";
+    }
+
+    private String buildPaidCancellationRefundPayload(Booking booking, double refundPercentage) {
+        String serviceName = getServiceName(booking);
+        if (refundPercentage > 0) {
+            int pct = (int) Math.round(refundPercentage);
+            return serviceName + " was cancelled after payment. A refund of approximately " + pct
+                    + "% of your payment is being processed according to our refund policy.";
+        }
+        if (booking.getRequestedStartAt() != null) {
+            return serviceName + " was cancelled after payment. Per our refund policy, no refund applies for this cancellation timing.";
+        }
+        return serviceName + " was cancelled after payment. Refund eligibility follows our refund policy; check your payment history for status.";
+    }
+
+    private String buildBookingAcceptedPayload(Booking booking) {
+        String serviceName = getServiceName(booking);
+        return serviceName + " was accepted by the consultant. Complete payment to confirm your session.";
     }
 
     private String buildBookingRejectedPayload(Booking booking, String reason) {

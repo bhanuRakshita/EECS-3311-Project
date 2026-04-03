@@ -20,7 +20,7 @@ import AdminApprovals from './admin/pages/Approvals'
 import AdminPolicies from './admin/pages/Policies'
 import AdminServices from './admin/pages/Services'
 import ChatWidget from './shared/components/ChatWidget'
-import Landing from './pages/Landing'
+// import Landing from './pages/Landing'
 
 function RootRedirect() {
   const { isLoggedIn, roles } = useAuth()
