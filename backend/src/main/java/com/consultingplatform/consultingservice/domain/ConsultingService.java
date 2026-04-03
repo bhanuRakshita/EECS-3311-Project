@@ -17,6 +17,9 @@ public class ConsultingService {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "consultant_id")
+    private Long consultantId;
+
     @Column(name = "service_type", nullable = false)
     private String serviceType;
 
