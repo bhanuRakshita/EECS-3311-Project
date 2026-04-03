@@ -147,9 +147,9 @@ export default function Login() {
       const r = Array.isArray(decoded?.roles)
         ? decoded.roles
         : (decoded?.roles ?? '').split(' ')
-      const role = r[0]?.toUpperCase()
-      if (role === 'ADMIN') navigate('/admin/approvals')
-      else if (role === 'CONSULTANT') navigate('/consultant/bookings')
+      const role = r[0]?.toUpperCase().replace(/^ROLE_/, '')
+      if (role === 'ADMIN') navigate('/admin/status')
+      else if (role === 'CONSULTANT') navigate('/consultant/dashboard')
       else navigate('/client/services')
     } catch (err) {
       const data = err.response?.data

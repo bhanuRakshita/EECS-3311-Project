@@ -27,7 +27,7 @@ function RootRedirect() {
   const { isLoggedIn, roles } = useAuth()
   if (!isLoggedIn) return <Landing />
   const role = roles[0]?.toUpperCase()
-  if (role === 'ADMIN') return <Navigate to="/admin/approvals" replace />
+  if (role === 'ADMIN') return <Navigate to="/admin/status" replace />
   if (role === 'CONSULTANT') return <Navigate to="/consultant/dashboard" replace />
   return <Navigate to="/client/services" replace />
 }
