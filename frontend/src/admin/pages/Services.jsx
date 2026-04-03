@@ -118,16 +118,22 @@ export default function AdminServices() {
   }
 
   const handleDelete = async (svc) => {
-    if (!window.confirm(`Remove "${svc.title}" from the catalog? It will be hidden from clients.`)) return
+    if (
+      !window.confirm(
+        `Permanently delete "${svc.title}" from the database? This cannot be undone. Related availability slots will be removed. If any bookings still reference this service, deletion will be blocked—use “Active” off to hide the service instead.`
+      )
+    ) {
+      return
+    }
     setError('')
     setSuccess('')
     try {
       await deleteAdminService(svc.id)
-      setSuccess(`Service "${svc.title}" removed from the catalog.`)
+      setSuccess(`Service "${svc.title}" was deleted.`)
       if (editingId === svc.id) closeForm()
       load()
     } catch (err) {
-      setError(err.response?.data?.message ?? 'Failed to delete service')
+      setError(err.response?.data?.message ?? err.message ?? 'Failed to delete service')
     }
   }
 
@@ -179,15 +185,32 @@ export default function AdminServices() {
           </div>
 
           {editingId != null && (
-            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) => set('isActive', e.target.checked)}
-                className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500"
-              />
-              Active (visible to clients when browsing)
-            </label>
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-[#2e303a] bg-[#16171d] px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-200">Active</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {form.isActive
+                    ? 'Shown in the catalog when clients browse services.'
+                    : 'Hidden from the catalog; existing data is kept.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isActive}
+                disabled={submitting}
+                onClick={() => set('isActive', !form.isActive)}
+                className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#16171d] disabled:cursor-not-allowed disabled:opacity-50 ${
+                  form.isActive ? 'bg-indigo-600' : 'bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ${
+                    form.isActive ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
           )}
 
           {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>}

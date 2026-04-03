@@ -127,4 +127,11 @@ public class AdminController {
         
         return ResponseEntity.ok(stats);
     }
+
+    @GetMapping("/system/status")
+    public ResponseEntity<SystemStatusStubDto> getSystemStatus() {
+        return ResponseEntity.ok(
+            new SystemStatusStubDto("UP", true, "Application is running.")
+        );
+    }
 }

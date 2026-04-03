@@ -91,6 +91,8 @@ export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/re
 export const markAllNotificationsRead = () => api.put('/api/notifications/read-all')
 
 // Admin
+export const getSystemStatus = () => api.get('/api/admin/system/status')
+export const getAdminStats = () => api.get('/api/admin/stats')
 export const getPolicy = (key) => api.get(`/api/admin/policies/${key}`)
 export const getPendingConsultants = () => api.get('/api/admin/consultants/pending')
 export const approveConsultant = (consultantId, data) =>

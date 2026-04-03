@@ -9,7 +9,9 @@ import com.consultingplatform.consultingservice.repository.ConsultingServiceRepo
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategy;
 import com.consultingplatform.consultingservice.service.pricing.PricingStrategyFactory;
 import com.consultingplatform.consultingservice.web.dto.ConsultingServiceDto;
+import com.consultingplatform.admin.service.ConflictException;
 import com.consultingplatform.admin.service.ResourceNotFoundException;
+import com.consultingplatform.booking.repository.BookingRepository;
 
 import org.springframework.data.domain.Sort;
 
@@ -23,13 +25,16 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
     private final ConsultingServiceRepository consultingServiceRepository;
     private final SystemPolicyService systemPolicyService;
     private final PricingStrategyFactory pricingStrategyFactory;
+    private final BookingRepository bookingRepository;
 
     public ConsultingServiceServiceImp(ConsultingServiceRepository consultingServiceRepository,
                                        SystemPolicyService systemPolicyService,
-                                       PricingStrategyFactory pricingStrategyFactory) {
+                                       PricingStrategyFactory pricingStrategyFactory,
+                                       BookingRepository bookingRepository) {
         this.consultingServiceRepository = consultingServiceRepository;
         this.systemPolicyService = systemPolicyService;
         this.pricingStrategyFactory = pricingStrategyFactory;
+        this.bookingRepository = bookingRepository;
     }
     
     @Override
@@ -88,10 +93,14 @@ public class ConsultingServiceServiceImp implements ConsultingServiceService{
 
     @Override
     public void deleteService(Long id) {
-        ConsultingService service = consultingServiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Consulting service not found"));
-        service.setIsActive(false);
-        consultingServiceRepository.save(service);
+        if (!consultingServiceRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Consulting service not found");
+        }
+        if (bookingRepository.countByServiceId(id) > 0) {
+            throw new ConflictException(
+                    "Cannot delete this service while bookings reference it. Deactivate it instead, or resolve those bookings first.");
+        }
+        consultingServiceRepository.deleteById(id);
     }
 
     private ConsultingService applyPricingStrategy(ConsultingService service) {
