@@ -12,12 +12,15 @@ const STATUS_COLORS = {
   CANCELLED: 'bg-red-500/10 text-red-400',
 }
 
+const FILTERS = ['ALL', 'REQUESTED', 'CONFIRMED', 'PAID', 'COMPLETED', 'REJECTED', 'CANCELLED']
+
 export default function ClientBookings() {
   const [bookings, setBookings] = useState([])
   const [usersMap, setUsersMap] = useState({})
   const [servicesMap, setServicesMap] = useState({})
   const [paymentsMap, setPaymentsMap] = useState({})
   const [refundPolicy, setRefundPolicy] = useState(null)
+  const [filter, setFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -31,7 +34,8 @@ export default function ClientBookings() {
         getPolicy('REFUND_POLICY').catch(() => ({ data: null })),
         getPaymentHistory(clientId).catch(() => ({ data: [] }))
       ])
-      setBookings(bookingsRes.data)
+      const sorted = [...bookingsRes.data].sort((a, b) => new Date(b.requestedStartAt) - new Date(a.requestedStartAt))
+      setBookings(sorted)
       const uMap = {}
       for (const u of usersRes.data) uMap[u.id] = u
       setUsersMap(uMap)
@@ -96,16 +100,47 @@ export default function ClientBookings() {
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading…</div>
 
+  const filtered = filter === 'ALL' ? bookings : bookings.filter((b) => b.status === filter)
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold text-white mb-6">My Bookings</h2>
+      <h2 className="text-2xl font-semibold text-white mb-4">My Bookings</h2>
 
-      {bookings.length === 0 && (
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => setFilter('ALL')}
+          className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${
+            filter === 'ALL'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-[#2e303a] text-gray-400 hover:bg-[#3a3c48] hover:text-gray-200'
+          }`}
+        >
+          All
+        </button>
+        <select
+          value={filter === 'ALL' ? '' : filter}
+          onChange={(e) => setFilter(e.target.value || 'ALL')}
+          className="bg-[#2e303a] border border-[#444] text-sm text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+        >
+          <option value="">Filter by status…</option>
+          {FILTERS.filter((f) => f !== 'ALL').map((f) => (
+            <option key={f} value={f}>{f.charAt(0) + f.slice(1).toLowerCase()}</option>
+          ))}
+        </select>
+        {filter !== 'ALL' && (
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[filter] ?? 'bg-gray-500/20 text-gray-400'}`}>
+            {filter}
+          </span>
+        )}
+      </div>
+
+      {filtered.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No bookings yet.{' '}
-          <button className="text-indigo-400 hover:underline" onClick={() => navigate('/client/services')}>
-            Browse services
-          </button>
+          {bookings.length === 0 ? (
+            <>No bookings yet.{' '}<button className="text-indigo-400 hover:underline" onClick={() => navigate('/client/services')}>Browse services</button></>
+          ) : (
+            'No bookings match this filter.'
+          )}
         </div>
       )}
 
@@ -121,7 +156,7 @@ export default function ClientBookings() {
       )}
 
       <div className="space-y-3">
-        {bookings.map((b) => (
+        {filtered.map((b) => (
           <div key={b.id} className="bg-[#1F2023] rounded-xl border border-[#2e303a] px-5 py-4 flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">

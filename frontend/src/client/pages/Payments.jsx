@@ -459,8 +459,8 @@ export default function ClientPayments() {
         </div>
       )}
 
-      {/* Saved Payment Methods */}
-      <div>
+      {/* Saved Payment Methods — hidden while a payment is in progress */}
+      {!(state?.booking && !paid) && <div>
         <PaymentMethodSelector
           title="Payment Methods"
           actionText={showAddMethod ? '' : 'Add Method'}
@@ -483,7 +483,7 @@ export default function ClientPayments() {
             <AddMethodForm clientId={clientId} onAdded={() => { setShowAddMethod(false); loadAll() }} />
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Payment History */}
       <div>

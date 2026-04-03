@@ -67,7 +67,8 @@ export default function ConsultantBookings() {
         getUsers(),
         getServices(),
       ])
-      setBookings(bookingsRes.data)
+      const sorted = [...bookingsRes.data].sort((a, b) => new Date(b.requestedStartAt) - new Date(a.requestedStartAt))
+      setBookings(sorted)
       const uMap = {}
       for (const u of usersRes.data) uMap[u.id] = u
       setUsersMap(uMap)

@@ -45,6 +45,34 @@ export default function AdminServices() {
 
   useEffect(() => { load() }, [])
 
+  const getErrorMessage = (err) => {
+    const data = err?.response?.data
+    if (!data) {
+      if (err?.response?.status) {
+        return `Failed to create service (${err.response.status})`
+      }
+      if (typeof err?.message === 'string' && err.message.trim()) {
+        return err.message
+      }
+      return 'Failed to create service'
+    }
+    if (typeof data.message === 'string' && data.message.trim()) {
+      if (data.message === 'Request validation failed' && data.details && typeof data.details === 'object') {
+        const firstDetail = Object.values(data.details).find((value) => typeof value === 'string' && value.trim())
+        if (firstDetail) return firstDetail
+      }
+      return data.message
+    }
+    if (Array.isArray(data.errors) && data.errors.length > 0) {
+      const firstError = data.errors.find((entry) => typeof entry?.message === 'string' && entry.message.trim())
+      if (firstError) return firstError.message
+    }
+    if (typeof data === 'string' && data.trim()) {
+      return data
+    }
+    return 'Failed to create service'
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -63,7 +91,8 @@ export default function AdminServices() {
       setShowForm(false)
       load()
     } catch (err) {
-      setError(err.response?.data?.message ?? 'Failed to create service')
+      console.error('createAdminService failed', err?.response?.status, err?.response?.data, err)
+      setError(getErrorMessage(err))
     } finally {
       setSubmitting(false)
     }
