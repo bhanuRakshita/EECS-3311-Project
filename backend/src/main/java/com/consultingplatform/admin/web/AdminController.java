@@ -76,6 +76,13 @@ public class AdminController {
         return ResponseEntity.ok(consultantRegistrationRepository.findByStatus(ConsultantApprovalStatus.PENDING));
     }
 
+    @GetMapping("/policies/{policyKey}")
+    public ResponseEntity<PolicyResponseDto> getPolicy(@PathVariable String policyKey) {
+        return systemPolicyService.getPolicy(policyKey)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/policies/{policyKey}")
     public ResponseEntity<PolicyResponseDto> upsertPolicy(
         @PathVariable String policyKey,
