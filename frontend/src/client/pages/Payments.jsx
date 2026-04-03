@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { processPayment, getPaymentHistory, getPaymentMethods, addPaymentMethod, deletePaymentMethod, getClientBookings, getServices, getUsers } from '../../shared/lib/api'
 import { getUserId } from '../../shared/lib/auth'
 import { PaymentMethodSelector } from '../../shared/components/PaymentMethodSelector'
+import { CheckCircle } from 'lucide-react'
 
 const PAYMENT_TYPES = ['CREDIT_CARD', 'DEBIT_CARD', 'PAYPAL', 'BANK_TRANSFER']
 
@@ -58,57 +59,184 @@ function Field({ label, value, onChange, placeholder, type = 'text', required = 
   )
 }
 
-function PaymentFields({ type, fields, set }) {
+function PaymentFields({ type, fields, set, lockedFields = [] }) {
+  const isLocked = (k) => lockedFields.includes(k)
+  const fieldClass = (k) =>
+    `w-full bg-[#16171d] border rounded-lg px-3 py-2 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+      isLocked(k)
+        ? 'border-[#2e303a] text-gray-500 cursor-not-allowed'
+        : 'border-[#333333] text-gray-100'
+    }`
+
   if (type === 'CREDIT_CARD' || type === 'DEBIT_CARD') return (
     <>
-      <Field label="Card number" value={fields.cardNumber ?? ''} onChange={(v) => set('cardNumber', v)} placeholder="4111 1111 1111 1111" />
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Card number</label>
+        <input
+          type="text"
+          value={fields.cardNumber ?? ''}
+          onChange={(e) => !isLocked('cardNumber') && set('cardNumber', e.target.value)}
+          placeholder="4111 1111 1111 1111"
+          readOnly={isLocked('cardNumber')}
+          className={fieldClass('cardNumber')}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Expiry (MM/YY)" value={fields.expiryDate ?? ''} onChange={(v) => set('expiryDate', v)} placeholder="12/26" />
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Expiry (MM/YY)</label>
+          <input
+            type="text"
+            value={fields.expiryDate ?? ''}
+            onChange={(e) => !isLocked('expiryDate') && set('expiryDate', e.target.value)}
+            placeholder="12/26"
+            readOnly={isLocked('expiryDate')}
+            className={fieldClass('expiryDate')}
+          />
+        </div>
         <Field label="CVV" value={fields.cvv ?? ''} onChange={(v) => set('cvv', v)} placeholder="123" />
       </div>
-      <Field label="Cardholder name" value={fields.cardholderName ?? ''} onChange={(v) => set('cardholderName', v)} placeholder="John Doe" />
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Cardholder name</label>
+        <input
+          type="text"
+          value={fields.cardholderName ?? ''}
+          onChange={(e) => !isLocked('cardholderName') && set('cardholderName', e.target.value)}
+          placeholder="John Doe"
+          readOnly={isLocked('cardholderName')}
+          className={fieldClass('cardholderName')}
+        />
+      </div>
     </>
   )
   if (type === 'PAYPAL') return (
-    <Field label="PayPal email" type="email" value={fields.paypalEmail ?? ''} onChange={(v) => set('paypalEmail', v)} placeholder="you@paypal.com" />
+    <div>
+      <label className="block text-sm font-medium text-gray-300 mb-1">PayPal email</label>
+      <input
+        type="email"
+        value={fields.paypalEmail ?? ''}
+        onChange={(e) => !isLocked('paypalEmail') && set('paypalEmail', e.target.value)}
+        placeholder="you@paypal.com"
+        readOnly={isLocked('paypalEmail')}
+        className={fieldClass('paypalEmail')}
+      />
+    </div>
   )
   if (type === 'BANK_TRANSFER') return (
     <>
-      <Field label="Account number" value={fields.accountNumber ?? ''} onChange={(v) => set('accountNumber', v)} placeholder="123456789" />
-      <Field label="Routing number" value={fields.routingNumber ?? ''} onChange={(v) => set('routingNumber', v)} placeholder="021000021" />
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Account number</label>
+        <input
+          type="text"
+          value={fields.accountNumber ?? ''}
+          onChange={(e) => !isLocked('accountNumber') && set('accountNumber', e.target.value)}
+          placeholder="123456789"
+          readOnly={isLocked('accountNumber')}
+          className={fieldClass('accountNumber')}
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Routing number</label>
+        <input
+          type="text"
+          value={fields.routingNumber ?? ''}
+          onChange={(e) => !isLocked('routingNumber') && set('routingNumber', e.target.value)}
+          placeholder="021000021"
+          readOnly={isLocked('routingNumber')}
+          className={fieldClass('routingNumber')}
+        />
+      </div>
     </>
   )
   return null
 }
 
-function PayNowForm({ booking, savedMethods, onSuccess }) {
-  const [useSaved, setUseSaved] = useState(savedMethods.length > 0)
-  const [selectedMethodId, setSelectedMethodId] = useState(savedMethods[0]?.id ?? null)
+function autofillFromSaved(method) {
+  const payType = method.paymentType ?? method.type
+  if (payType === 'CREDIT_CARD' || payType === 'DEBIT_CARD') {
+    return {
+      cardNumber: method.last4Digits ? `**** **** **** ${method.last4Digits}` : '',
+      expiryDate: method.expiryDate ?? '',
+      cardholderName: method.cardholderName ?? '',
+      cvv: '',
+    }
+  }
+  if (payType === 'PAYPAL') return { paypalEmail: method.paypalEmail ?? '' }
+  if (payType === 'BANK_TRANSFER') return {
+    accountNumber: method.last4AccountDigits ? `****${method.last4AccountDigits}` : '',
+    routingNumber: method.routingNumber ?? '',
+  }
+  return {}
+}
+
+const CARD_LOCKED_FIELDS = ['cardNumber', 'expiryDate', 'cardholderName']
+const PAYPAL_LOCKED_FIELDS = ['paypalEmail']
+const BANK_LOCKED_FIELDS = ['accountNumber', 'routingNumber']
+
+function lockedFieldsFor(payType) {
+  if (payType === 'CREDIT_CARD' || payType === 'DEBIT_CARD') return CARD_LOCKED_FIELDS
+  if (payType === 'PAYPAL') return PAYPAL_LOCKED_FIELDS
+  if (payType === 'BANK_TRANSFER') return BANK_LOCKED_FIELDS
+  return []
+}
+
+function getBookingLabel(booking, fallback = 'this session') {
+  return booking?.serviceName ?? booking?.serviceTitle ?? fallback
+}
+
+function PayNowForm({ booking, savedMethods, clientId, onSuccess }) {
+  const [selectedSavedId, setSelectedSavedId] = useState(null)
   const [type, setType] = useState('CREDIT_CARD')
   const [fields, setFields] = useState({})
+  const [saveMethod, setSaveMethod] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const set = (k, v) => setFields((f) => ({ ...f, [k]: v }))
+
+  const handleSelectSaved = (id) => {
+    setSelectedSavedId(id)
+    if (id === null) { setFields({}); return }
+    const m = savedMethods.find((m) => m.id === id)
+    if (!m) return
+    setType(m.paymentType ?? m.type ?? 'CREDIT_CARD')
+    setFields(autofillFromSaved(m))
+  }
+
+  const activeSaved = selectedSavedId != null
+    ? savedMethods.find((m) => m.id === selectedSavedId)
+    : null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const clientId = getUserId()
       let paymentDetails
-      if (useSaved && selectedMethodId) {
-        const m = savedMethods.find((m) => m.id === selectedMethodId)
-        paymentDetails = { type: m?.paymentType ?? m?.type ?? type }
-      } else {
+      let savedPaymentMethodId = null
+      if (activeSaved) {
+        savedPaymentMethodId = activeSaved.id
         paymentDetails = {
+          type: activeSaved.paymentType ?? activeSaved.type ?? type,
+          cvv: fields.cvv ?? '',
+        }
+      } else {
+        const sanitized = {
           type,
           ...fields,
           ...(fields.cardNumber ? { cardNumber: fields.cardNumber.replace(/\s+/g, '') } : {}),
           ...(fields.cvv ? { cvv: fields.cvv.replace(/\s+/g, '') } : {}),
         }
+        if (saveMethod) {
+          await addPaymentMethod(clientId, sanitized)
+        }
+        paymentDetails = sanitized
       }
-      await processPayment({ bookingId: booking.id, clientId: Number(clientId), amount: booking.amount, paymentDetails })
+      await processPayment({
+        bookingId: booking.id,
+        clientId: Number(clientId),
+        amount: booking.amount,
+        savedPaymentMethodId,
+        paymentDetails,
+      })
       onSuccess()
     } catch (err) {
       setError(err.response?.data?.message ?? 'Payment failed')
@@ -117,53 +245,100 @@ function PayNowForm({ booking, savedMethods, onSuccess }) {
     }
   }
 
-  const selectorMethods = savedMethods.map((m) => ({
-    id: m.id,
-    icon: TYPE_ICONS[m.paymentType ?? m.type] ?? TYPE_ICONS.CREDIT_CARD,
-    label: (m.paymentType ?? m.type ?? '').replace(/_/g, ' '),
-    description: m.lastFour ? `•••• ${m.lastFour}` : m.email ?? '',
-  }))
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Saved method selector */}
       {savedMethods.length > 0 && (
-        <div className="flex gap-3 mb-2">
-          <button type="button" onClick={() => setUseSaved(true)}
-            className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${useSaved ? 'bg-indigo-600 text-white' : 'bg-[#2e303a] text-gray-400 hover:text-gray-200'}`}>
-            Saved Methods
-          </button>
-          <button type="button" onClick={() => setUseSaved(false)}
-            className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${!useSaved ? 'bg-indigo-600 text-white' : 'bg-[#2e303a] text-gray-400 hover:text-gray-200'}`}>
-            New Card
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Payment method</label>
+          <div className="space-y-2">
+            {savedMethods.map((m) => {
+              const payType = m.paymentType ?? m.type ?? ''
+              const desc = m.last4Digits ? `•••• ${m.last4Digits}` : m.paypalEmail ?? ''
+              const isSelected = selectedSavedId === m.id
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => handleSelectSaved(isSelected ? null : m.id)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-500/10'
+                      : 'border-[#2e303a] bg-[#16171d] hover:border-[#444]'
+                  }`}
+                >
+                  <div className="flex-shrink-0">{TYPE_ICONS[payType] ?? TYPE_ICONS.CREDIT_CARD}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-200">{payType.replace(/_/g, ' ')}</p>
+                    {desc && <p className="text-xs text-gray-500">{desc}</p>}
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected ? 'border-indigo-500' : 'border-[#444]'}`}>
+                    {isSelected && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                  </div>
+                </div>
+              )
+            })}
+            <div
+              onClick={() => handleSelectSaved(null)}
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                selectedSavedId === null
+                  ? 'border-indigo-500 bg-indigo-500/10'
+                  : 'border-[#2e303a] bg-[#16171d] hover:border-[#444]'
+              }`}
+            >
+              <div className="flex-1 text-sm font-medium text-gray-200">Use a new payment method</div>
+              <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selectedSavedId === null ? 'border-indigo-500' : 'border-[#444]'}`}>
+                {selectedSavedId === null && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {useSaved && savedMethods.length > 0 ? (
-        <PaymentMethodSelector
-          title="Select Payment Method"
-          actionText=""
-          methods={selectorMethods}
-          defaultSelectedId={selectorMethods[0]?.id}
-          onSelectionChange={setSelectedMethodId}
-        />
-      ) : (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Payment method</label>
-            <select value={type} onChange={(e) => { setType(e.target.value); setFields({}) }}
-              className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              {PAYMENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-            </select>
+      {/* Type selector only shown for new method or if no saved methods */}
+      {(selectedSavedId === null) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            {savedMethods.length > 0 ? 'New payment type' : 'Payment method'}
+          </label>
+          <select value={type} onChange={(e) => { setType(e.target.value); setFields({}) }}
+            className="w-full bg-[#16171d] border border-[#333333] rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            {PAYMENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Payment fields — autofilled when saved method selected */}
+      {activeSaved && (type === 'CREDIT_CARD' || type === 'DEBIT_CARD') && (
+        <p className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+          Card details autofilled — enter your CVV to proceed.
+        </p>
+      )}
+      <PaymentFields
+        type={type}
+        fields={fields}
+        set={set}
+        lockedFields={activeSaved ? lockedFieldsFor(type) : []}
+      />
+
+      {/* Save method checkbox — only for new entries */}
+      {selectedSavedId === null && (
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <div
+            onClick={() => setSaveMethod((v) => !v)}
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+              saveMethod ? 'bg-indigo-600 border-indigo-600' : 'border-[#444] bg-[#16171d]'
+            }`}
+          >
+            {saveMethod && <CheckCircle className="w-3 h-3 text-white" />}
           </div>
-          <PaymentFields type={type} fields={fields} set={set} />
-        </>
+          <span className="text-sm text-gray-400">Save this payment method for future use</span>
+        </label>
       )}
 
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</div>}
       <button type="submit" disabled={loading}
         className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
-        {loading ? 'Processing…' : `Pay for Booking #${booking.id}`}
+        {loading ? 'Processing…' : `Pay $${booking.amount} for ${getBookingLabel(booking)}`}
       </button>
     </form>
   )
@@ -263,7 +438,7 @@ export default function ClientPayments() {
     id: m.id,
     icon: TYPE_ICONS[m.paymentType ?? m.type] ?? TYPE_ICONS.CREDIT_CARD,
     label: (m.paymentType ?? m.type ?? '').replace(/_/g, ' '),
-    description: m.lastFour ? `•••• ${m.lastFour}` : m.email ?? '',
+    description: m.last4Digits ? `•••• ${m.last4Digits}` : m.paypalEmail ?? '',
   }))
 
   return (
@@ -275,7 +450,7 @@ export default function ClientPayments() {
           <h2 className="text-xl font-semibold text-white mb-4">
             {state.booking.serviceName ?? state.booking.serviceTitle ?? 'Complete Payment'}
           </h2>
-          <PayNowForm booking={state.booking} savedMethods={methods} onSuccess={() => { setPaid(true); loadAll() }} />
+          <PayNowForm booking={state.booking} savedMethods={methods} clientId={clientId} onSuccess={() => { setPaid(true); loadAll() }} />
         </div>
       )}
       {paid && (
@@ -333,7 +508,7 @@ export default function ClientPayments() {
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-gray-100">
-                          {service?.title ?? (p.bookingId ? `Booking #${p.bookingId}` : 'Consulting Session')}
+                          {service?.title ?? (consultantName ? `Session with ${consultantName}` : 'Consulting Session')}
                         </span>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[p.status] ?? 'bg-gray-500/20 text-gray-400'}`}>
                           {p.status}
@@ -362,3 +537,7 @@ export default function ClientPayments() {
     </div>
   )
 }
+
+
+
+
