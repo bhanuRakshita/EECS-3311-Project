@@ -67,66 +67,28 @@ public class NotificationService {
         if (!isNotificationSystemEnabled() || booking == null || booking.getClientId() == null) {
             return;
         }
-
-        String payload = buildPaidCancellationRefundPayload(booking, refundPercentage);
-        Notification notification = Notification.builder()
-                .userId(booking.getClientId())
-                .notificationType(NotificationType.PAYMENT_REFUNDED)
-                .payload(payload)
-                .build();
-        notificationRepository.save(notification);
-    }
-
-    public void sendBookingAcceptedNotificationToClient(Booking booking) {
-        if (!isNotificationSystemEnabled() || booking == null || booking.getClientId() == null) {
+        Long clientId = booking.getClientId();
+        Long consultantId = booking.getConsultantId();
+        if (clientId == null || consultantId == null) {
             return;
         }
 
-        String payload = buildBookingAcceptedPayload(booking);
+        String payload = buildBookingCancelledPayload(booking);
+
         Notification clientNotification = Notification.builder()
                 .userId(booking.getClientId())
-                .notificationType(NotificationType.BOOKING_CONFIRMED)
+                .notificationType(NotificationType.BOOKING_CANCELLED)
                 .payload(payload)
                 .build();
+
+        Notification consultantNotification = Notification.builder()
+                .userId(booking.getConsultantId())
+                .notificationType(NotificationType.BOOKING_CANCELLED)
+                .payload(payload)
+                .build();
+
         notificationRepository.save(clientNotification);
-    }
-
-    public void sendBookingRefundNotificationToClient(Booking booking, BigDecimal refundAmount) {
-        if (!isNotificationSystemEnabled() || booking == null || booking.getClientId() == null
-                || refundAmount == null || refundAmount.signum() <= 0) {
-            return;
-        }
-
-        String serviceName = getServiceName(booking);
-        String payload = "A refund of $" + refundAmount.setScale(2, java.math.RoundingMode.HALF_UP)
-                + " was issued for " + serviceName + ".";
-
-        Notification notification = Notification.builder()
-                .userId(booking.getClientId())
-                .notificationType(NotificationType.PAYMENT_REFUNDED)
-                .payload(payload)
-                .build();
-
-        notificationRepository.save(notification);
-    }
-
-    public void sendConsultantRejectedNotification(User consultant, String reason) {
-        if (!isNotificationSystemEnabled() || consultant == null || consultant.getId() == null) {
-            return;
-        }
-
-        String payload = "Your consultant account creation request was rejected.";
-        if (reason != null && !reason.isBlank()) {
-            payload += " Reason: " + reason;
-        }
-
-        Notification notification = Notification.builder()
-                .userId(consultant.getId())
-                .notificationType(NotificationType.CONSULTANT_REJECTED)
-                .payload(payload)
-                .build();
-
-        notificationRepository.save(notification);
+        notificationRepository.save(consultantNotification);
     }
 
     public void sendBookingRejectedNotificationToClient(Booking booking, String reason) {

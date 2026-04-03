@@ -91,11 +91,14 @@ export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/re
 export const markAllNotificationsRead = () => api.put('/api/notifications/read-all')
 
 // Admin
+export const getSystemStatus = () => api.get('/api/admin/system/status')
+export const getAdminStats = () => api.get('/api/admin/stats')
 export const getPolicy = (key) => api.get(`/api/admin/policies/${key}`)
 export const getPendingConsultants = () => api.get('/api/admin/consultants/pending')
 export const approveConsultant = (consultantId, data) =>
   api.post(`/api/admin/consultants/${consultantId}/approval`, data)
 export const updatePolicy = (key, data) => api.put(`/api/admin/policies/${key}`, data)
+export const getAdminServices = () => api.get('/api/admin/services')
 export const createAdminService = (data) => api.post('/api/admin/services', data)
-export const getSystemStatus = () => api.get('/actuator/health')
-export const getAdminStats = () => api.get('/api/admin/stats')
+export const updateAdminService = (id, data) => api.put(`/api/admin/services/${id}`, data)
+export const deleteAdminService = (id) => api.delete(`/api/admin/services/${id}`)

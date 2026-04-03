@@ -8,4 +8,10 @@ public interface ConsultingServiceService {
     ConsultingService createService(ConsultingServiceDto serviceDto);
     List<ConsultingService> getAllActiveServices(String serviceType);
     ConsultingService getServiceById(Long id);
+
+    List<ConsultingService> getAllServicesForAdmin();
+
+    ConsultingService updateService(Long id, ConsultingServiceDto serviceDto);
+
+    void deleteService(Long id);
 }

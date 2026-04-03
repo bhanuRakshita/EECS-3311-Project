@@ -20,6 +20,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +33,7 @@ import com.consultingplatform.admin.web.dto.SystemStatusStubDto;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final ConsultantApprovalService consultantApprovalService;
@@ -59,6 +61,11 @@ public class AdminController {
 
     // Endpoint for admins to create a new Consulting Service
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/services")
+    public ResponseEntity<List<ConsultingService>> listConsultingServicesForAdmin() {
+        return ResponseEntity.ok(consultingServiceService.getAllServicesForAdmin());
+    }
+
     @PostMapping("/services")
     public ResponseEntity<ConsultingService> createConsultingService(@Valid @RequestBody ConsultingServiceDto serviceDto) {
         ConsultingService createdService = consultingServiceService.createService(serviceDto);
@@ -66,6 +73,18 @@ public class AdminController {
         return new ResponseEntity<>(createdService, HttpStatus.CREATED);
     }
 
+    @PutMapping("/services/{id}")
+    public ResponseEntity<ConsultingService> updateConsultingService(
+            @PathVariable Long id,
+            @Valid @RequestBody ConsultingServiceDto serviceDto) {
+        return ResponseEntity.ok(consultingServiceService.updateService(id, serviceDto));
+    }
+
+    @DeleteMapping("/services/{id}")
+    public ResponseEntity<Void> deleteConsultingService(@PathVariable Long id) {
+        consultingServiceService.deleteService(id);
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping("/consultants/{consultantId}/approval")
     public ResponseEntity<ConsultantApprovalResponseDto> approveOrRejectConsultant(
@@ -109,5 +128,12 @@ public class AdminController {
         stats.put("appointmentsWaitingPayment", bookingRepository.countByStatus("CONFIRMED"));
         
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/system/status")
+    public ResponseEntity<SystemStatusStubDto> getSystemStatus() {
+        return ResponseEntity.ok(
+            new SystemStatusStubDto("UP", true, "Application is running.")
+        );
     }
 }

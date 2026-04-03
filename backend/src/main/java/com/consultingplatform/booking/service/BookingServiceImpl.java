@@ -141,6 +141,9 @@ public class BookingServiceImpl implements BookingService {
             notificationService.sendPaidBookingCancelledRefundNotificationToClient(cancelled, refundPercentage);
         }
         notificationService.sendBookingCancelledNotifications(cancelled);
+        if (wasPaid) {
+            notificationService.sendPaidBookingCancelledRefundNotificationToClient(cancelled, refundPercentage);
+        }
         return cancelled;
     }
 
