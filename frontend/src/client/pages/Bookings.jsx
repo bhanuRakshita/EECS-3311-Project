@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getClientBookings, cancelBooking, getUsers, getServices, getPolicy } from '../../shared/lib/api'
+import { getClientBookings, cancelBooking, getUsers, getServices, getPolicy, getPaymentHistory } from '../../shared/lib/api'
 import { getUserId } from '../../shared/lib/auth'
 
 const STATUS_COLORS = {
@@ -16,6 +16,7 @@ export default function ClientBookings() {
   const [bookings, setBookings] = useState([])
   const [usersMap, setUsersMap] = useState({})
   const [servicesMap, setServicesMap] = useState({})
+  const [paymentsMap, setPaymentsMap] = useState({})
   const [refundPolicy, setRefundPolicy] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -23,11 +24,12 @@ export default function ClientBookings() {
   const load = async () => {
     const clientId = getUserId()
     try {
-      const [bookingsRes, usersRes, servicesRes, policyRes] = await Promise.all([
+      const [bookingsRes, usersRes, servicesRes, policyRes, paymentsRes] = await Promise.all([
         getClientBookings(clientId),
         getUsers(),
         getServices(),
-        getPolicy('REFUND_POLICY').catch(() => ({ data: null }))
+        getPolicy('REFUND_POLICY').catch(() => ({ data: null })),
+        getPaymentHistory(clientId).catch(() => ({ data: [] }))
       ])
       setBookings(bookingsRes.data)
       const uMap = {}
@@ -36,6 +38,11 @@ export default function ClientBookings() {
       const sMap = {}
       for (const s of servicesRes.data) sMap[s.id] = s
       setServicesMap(sMap)
+      const pMap = {}
+      for (const p of (paymentsRes.data || [])) {
+        if (p.bookingId) pMap[p.bookingId] = p
+      }
+      setPaymentsMap(pMap)
       
       if (policyRes.data && policyRes.data.policyValue) {
         setRefundPolicy(JSON.parse(policyRes.data.policyValue))
@@ -122,6 +129,11 @@ export default function ClientBookings() {
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] ?? 'bg-gray-500/20 text-gray-400'}`}>
                   {b.status}
                 </span>
+                {b.status === 'CANCELLED' && paymentsMap[b.id]?.refundAmount != null && (
+                  <span className="text-xs text-gray-400">
+                    Cancelled with {(paymentsMap[b.id].refundAmount / paymentsMap[b.id].amount * 100).toFixed(0)}% refund
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-400">with {consultantName(b.consultantId)}</p>
               <p className="text-xs text-gray-600">
