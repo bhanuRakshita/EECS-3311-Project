@@ -115,7 +115,8 @@ public class UserServiceImpl implements UserService {
     private Consultant mapToConsultant(Map<String, Object> data) {
         Consultant consultant = new Consultant();
         setCommonFields(consultant, data);
-        // Approval status managed via consultant_registrations table
+        // Default consultant to INACTIVE until admin approves
+        consultant.setAccountStatus("INACTIVE");
         return consultant;
     }
     

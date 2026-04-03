@@ -459,8 +459,8 @@ export default function ClientPayments() {
         </div>
       )}
 
-      {/* Saved Payment Methods */}
-      <div>
+      {/* Saved Payment Methods — hidden while a payment is in progress */}
+      {!(state?.booking && !paid) && <div>
         <PaymentMethodSelector
           title="Payment Methods"
           actionText={showAddMethod ? '' : 'Add Method'}
@@ -483,7 +483,7 @@ export default function ClientPayments() {
             <AddMethodForm clientId={clientId} onAdded={() => { setShowAddMethod(false); loadAll() }} />
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Payment History */}
       <div>
@@ -492,7 +492,7 @@ export default function ClientPayments() {
           <p className="text-gray-500 text-sm">No payments yet.</p>
         ) : (
           <div className="space-y-3">
-            {history.map((p) => {
+            {history.flatMap((p) => {
               const booking = bookingsMap[p.bookingId]
               const service = booking ? servicesMap[booking.serviceId] : null
               const consultant = booking ? usersMap[booking.consultantId] : null
@@ -502,7 +502,12 @@ export default function ClientPayments() {
               const date = p.timestamp ? new Date(p.timestamp) : null
               const validDate = date && !isNaN(date)
 
-              return (
+              const rows = []
+              
+              // Original payment row
+              const displayStatus = p.status === 'REFUNDED' ? 'SUCCESS' : p.status
+
+              rows.push(
                 <div key={p.id} className="bg-[#1F2023] rounded-xl border border-[#2e303a] px-5 py-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1 min-w-0">
@@ -510,8 +515,8 @@ export default function ClientPayments() {
                         <span className="font-medium text-gray-100">
                           {service?.title ?? (consultantName ? `Session with ${consultantName}` : 'Consulting Session')}
                         </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[p.status] ?? 'bg-gray-500/20 text-gray-400'}`}>
-                          {p.status}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[displayStatus] ?? 'bg-gray-500/20 text-gray-400'}`}>
+                          {displayStatus}
                         </span>
                       </div>
                       {consultantName && (
@@ -526,10 +531,49 @@ export default function ClientPayments() {
                         <p className="text-xs text-red-400">{p.failureReason}</p>
                       )}
                     </div>
-                    <span className="text-lg font-semibold text-gray-100 shrink-0">${p.amount}</span>
+                    <span className="text-lg font-semibold text-gray-100 shrink-0">
+                      ${p.amount}
+                    </span>
                   </div>
                 </div>
               )
+
+              // Refund row if applicable
+              if (p.status === 'REFUNDED' && p.refundAmount != null) {
+                const refundDate = p.refundedAt ? new Date(p.refundedAt) : null
+                const validRefundDate = refundDate && !isNaN(refundDate)
+
+                rows.push(
+                  <div key={`${p.id}-refund`} className="bg-[#1F2023] rounded-xl border border-[#2e303a] px-5 py-4 relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-100">
+                            Refund for {service?.title ?? (consultantName ? `Session with ${consultantName}` : 'Consulting Session')}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 bg-green-500/20 text-green-400">
+                            REFUND
+                          </span>
+                        </div>
+                        {consultantName && (
+                          <p className="text-sm text-gray-400">with {consultantName}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          {validRefundDate && <span>{refundDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                          {p.paymentType && <span className="text-gray-600">· {p.paymentType.replace(/_/g, ' ')}</span>}
+                          <span className="text-gray-600">· TXN {p.transactionId?.slice(-8)}</span>
+                        </div>
+                      </div>
+                      <span className="text-lg font-semibold text-green-400 shrink-0">
+                        +${p.refundAmount}
+                      </span>
+                    </div>
+                  </div>
+                )
+              }
+
+              return rows
             })}
           </div>
         )}
