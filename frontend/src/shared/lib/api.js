@@ -97,3 +97,5 @@ export const approveConsultant = (consultantId, data) =>
   api.post(`/api/admin/consultants/${consultantId}/approval`, data)
 export const updatePolicy = (key, data) => api.put(`/api/admin/policies/${key}`, data)
 export const createAdminService = (data) => api.post('/api/admin/services', data)
+export const getSystemStatus = () => api.get('/actuator/health')
+export const getAdminStats = () => api.get('/api/admin/stats')
