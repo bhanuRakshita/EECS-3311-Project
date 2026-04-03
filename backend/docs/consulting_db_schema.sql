@@ -249,7 +249,8 @@ CREATE TABLE IF NOT EXISTS notifications (
             'PAYMENT_SUCCESS',
             'PAYMENT_FAILED',
             'PAYMENT_REFUNDED',
-            'POLICY_UPDATED'
+            'POLICY_UPDATED',
+            'CONSULTANT_PENDING_APPROVAL'
         )
     )
 );

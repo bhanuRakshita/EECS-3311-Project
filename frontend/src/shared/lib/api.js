@@ -69,8 +69,10 @@ export const getConsultantBookings = (consultantId, status) =>
 export const acceptBooking = (consultantId, bookingId) =>
   api.put(`/api/consultant/${consultantId}/bookings/${bookingId}/accept`)
 
-export const rejectBooking = (consultantId, bookingId) =>
-  api.put(`/api/consultant/${consultantId}/bookings/${bookingId}/reject`)
+export const rejectBooking = (consultantId, bookingId, reason) =>
+  api.put(`/api/consultant/${consultantId}/bookings/${bookingId}/reject`,
+    reason ? { reason } : {}
+  )
 
 export const completeBooking = (consultantId, bookingId) =>
   api.put(`/api/consultant/${consultantId}/bookings/${bookingId}/complete`)
@@ -81,6 +83,12 @@ export const getPaymentMethods = (clientId) => api.get(`/api/payments/methods/${
 export const addPaymentMethod = (clientId, data) => api.post(`/api/payments/methods/${clientId}`, data)
 export const deletePaymentMethod = (clientId, id) => api.delete(`/api/payments/methods/${clientId}/${id}`)
 export const getPaymentHistory = (clientId) => api.get(`/api/payments/history/${clientId}`)
+
+// Notifications
+export const getNotifications = () => api.get('/api/notifications')
+export const getUnreadCount = () => api.get('/api/notifications/unread-count')
+export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/read`)
+export const markAllNotificationsRead = () => api.put('/api/notifications/read-all')
 
 // Admin
 export const getPendingConsultants = () => api.get('/api/admin/consultants/pending')

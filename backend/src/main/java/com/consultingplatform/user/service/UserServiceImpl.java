@@ -8,6 +8,7 @@ import com.consultingplatform.user.domain.Client;
 import com.consultingplatform.user.domain.Consultant;
 import com.consultingplatform.user.domain.User;
 import com.consultingplatform.user.repository.UserRepository;
+import com.consultingplatform.notification.service.NotificationService;
 import org.springframework.stereotype.Service;
 import com.consultingplatform.security.PasswordService;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +23,16 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ConsultantRegistrationRepository consultantRegistrationRepository;
     private final PasswordService passwordService;
+    private final NotificationService notificationService;
 
     public UserServiceImpl(UserRepository userRepository,
                           ConsultantRegistrationRepository consultantRegistrationRepository,
-                          PasswordService passwordService) {
+                          PasswordService passwordService,
+                          NotificationService notificationService) {
         this.userRepository = userRepository;
         this.consultantRegistrationRepository = consultantRegistrationRepository;
         this.passwordService = passwordService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -47,12 +51,13 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
         
         // If consultant, create registration entry for admin approval
-        if (savedUser instanceof Consultant) {
+        if (savedUser instanceof Consultant consultant) {
             ConsultantRegistration registration = new ConsultantRegistration();
             registration.setConsultantId(savedUser.getId());
             registration.setStatus(ConsultantApprovalStatus.PENDING);
             registration.setCreatedAt(Instant.now());
             consultantRegistrationRepository.save(registration);
+            notificationService.sendConsultantPendingApprovalNotificationsToAdmins(consultant);
         }
         
         return savedUser;
