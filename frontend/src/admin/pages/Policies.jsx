@@ -89,11 +89,11 @@ export default function AdminPolicies() {
             )}
             {isDiscounted && (
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Discount %</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Discount % (1–100)</label>
                 <input
-                  type="number" step="0.01"
-                  value={formData.discountPercentage ?? 0}
-                  onChange={(e) => handleFormChange('discountPercentage', parseFloat(e.target.value))}
+                  type="number" step="1" min="1" max="100"
+                  value={Math.round((formData.discountPercentage ?? 0) * 100) || ''}
+                  onChange={(e) => handleFormChange('discountPercentage', parseFloat(e.target.value) / 100)}
                   className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -124,13 +124,13 @@ export default function AdminPolicies() {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Refund % (0-1.0)</label>
+                <label className="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Refund % (1–100)</label>
                 <input
-                  type="number" step="0.01"
-                  value={tier.refundPercentage}
+                  type="number" step="1" min="1" max="100"
+                  value={Math.round((tier.refundPercentage ?? 0) * 100) || ''}
                   onChange={(e) => {
                     const newTiers = [...tiers];
-                    newTiers[idx].refundPercentage = parseFloat(e.target.value) || 0;
+                    newTiers[idx].refundPercentage = (parseFloat(e.target.value) || 0) / 100;
                     handleFormChange('tiers', newTiers);
                   }}
                   className="w-full bg-[#1F2023] border border-[#333333] rounded-md px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
