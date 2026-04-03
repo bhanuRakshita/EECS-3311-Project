@@ -209,6 +209,7 @@ export default function Navbar() {
             <Link to="/admin/approvals" className="text-sm text-gray-400 hover:text-white transition-colors">Approvals</Link>
             <Link to="/admin/services" className="text-sm text-gray-400 hover:text-white transition-colors">Services</Link>
             <Link to="/admin/policies" className="text-sm text-gray-400 hover:text-white transition-colors">Policies</Link>
+            <Link to="/admin/status" className="text-sm text-gray-400 hover:text-white transition-colors">Status</Link>
           </>
         )}
       </div>

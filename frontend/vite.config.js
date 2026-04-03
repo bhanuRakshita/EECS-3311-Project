@@ -10,6 +10,7 @@ export default defineConfig({
       '/users': 'http://localhost:8080',
       '/services': 'http://localhost:8080',
       '/bookings': 'http://localhost:8080',
+      '/actuator': 'http://localhost:8080',
     },
   },
 })
