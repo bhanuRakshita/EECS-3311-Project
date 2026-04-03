@@ -70,7 +70,7 @@ public class NotificationService {
         notificationRepository.save(clientNotification);
     }
 
-    public void sendPaymentSuccessNotifications(Booking booking) {
+    public void sendPaymentSuccessNotification(Booking booking) {
         if (!isNotificationSystemEnabled()) {
             return;
         }
