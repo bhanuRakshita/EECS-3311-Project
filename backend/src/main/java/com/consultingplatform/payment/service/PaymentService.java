@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -183,15 +184,24 @@ public class PaymentService {
             return;
         }
 
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        BigDecimal totalRefundAmount = BigDecimal.ZERO;
         List<Payment> payments = paymentRepository.findByBookingId(bookingId);
         for (Payment payment : payments) {
             if (payment.getStatus() == PaymentStatus.SUCCESS) {
                 payment.setStatus(PaymentStatus.REFUNDED);
-                java.math.BigDecimal refundAmount = payment.getAmount().multiply(java.math.BigDecimal.valueOf(refundPercentage)).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal refundAmount = payment.getAmount().multiply(BigDecimal.valueOf(refundPercentage)).setScale(2, java.math.RoundingMode.HALF_UP);
                 payment.setRefundAmount(refundAmount);
                 payment.setRefundedAt(java.time.LocalDateTime.now());
                 paymentRepository.save(payment);
+                totalRefundAmount = totalRefundAmount.add(refundAmount);
             }
+        }
+
+        if (totalRefundAmount.signum() > 0) {
+            notificationService.sendBookingRefundNotificationToClient(booking, totalRefundAmount);
         }
     }
 

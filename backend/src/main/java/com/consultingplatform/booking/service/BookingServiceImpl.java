@@ -137,10 +137,10 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking cancelled = bookingRepository.save(booking);
-        notificationService.sendBookingCancelledNotifications(cancelled);
-        if (wasPaid) {
+        if (wasPaid && refundPercentage <= 0) {
             notificationService.sendPaidBookingCancelledRefundNotificationToClient(cancelled, refundPercentage);
         }
+        notificationService.sendBookingCancelledNotifications(cancelled);
         return cancelled;
     }
 

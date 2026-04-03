@@ -8,6 +8,7 @@ import com.consultingplatform.user.repository.UserRepository;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalDecision;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalRequestDto;
 import com.consultingplatform.admin.web.dto.ConsultantApprovalResponseDto;
+import com.consultingplatform.notification.service.NotificationService;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,10 +21,13 @@ public class ConsultantApprovalServiceImpl implements ConsultantApprovalService 
 
     private final ConsultantRegistrationRepository repository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    public ConsultantApprovalServiceImpl(ConsultantRegistrationRepository repository, UserRepository userRepository) {
+    public ConsultantApprovalServiceImpl(ConsultantRegistrationRepository repository, UserRepository userRepository,
+                                        NotificationService notificationService) {
         this.repository = repository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -65,6 +69,10 @@ public class ConsultantApprovalServiceImpl implements ConsultantApprovalService 
         registration.setDecidedAt(Instant.now());
 
         ConsultantRegistration saved = repository.save(registration);
+
+        if (newStatus == ConsultantApprovalStatus.REJECTED) {
+            notificationService.sendConsultantRejectedNotification(consultantUser, request.getReason());
+        }
 
         return new ConsultantApprovalResponseDto(
             saved.getConsultantId(),
