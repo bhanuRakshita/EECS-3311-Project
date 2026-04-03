@@ -21,7 +21,7 @@ import AdminPolicies from './admin/pages/Policies'
 import AdminServices from './admin/pages/Services'
 import SystemStatus from './admin/pages/SystemStatus'
 import ChatWidget from './shared/components/ChatWidget'
-//import Landing from './pages/Landing'
+import Landing from './pages/Landing'
 
 function RootRedirect() {
   const { isLoggedIn, roles } = useAuth()
