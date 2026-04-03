@@ -10,12 +10,8 @@ export default function Book() {
   const [error, setError] = useState('')
 
   const slot = state?.slot
-  const consultant = state?.consultant
+  const consultantId = state?.consultantId
   const service = state?.service
-
-  const consultantName = consultant
-    ? `${consultant.firstName ?? ''} ${consultant.lastName ?? ''}`.trim() || consultant.email || 'Consultant'
-    : 'Consultant'
 
   if (!slot) {
     return (
@@ -61,7 +57,7 @@ export default function Book() {
           )}
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Consultant</span>
-            <span className="text-gray-200 font-medium">{consultantName}</span>
+            <span className="text-gray-200 font-medium">#{consultantId}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Start</span>

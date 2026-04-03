@@ -90,9 +90,6 @@ export default function ClientBookings() {
               <p className="text-xs text-gray-600">
                 {b.requestedStartAt ? new Date(b.requestedStartAt).toLocaleString() : '—'}
               </p>
-              {b.rejectionReason && (
-                <p className="text-xs text-red-400 mt-1">Reason: {b.rejectionReason}</p>
-              )}
             </div>
 
             <div className="flex gap-2">
