@@ -19,6 +19,7 @@ import ConsultantBookings from './consultant/pages/Bookings'
 import AdminApprovals from './admin/pages/Approvals'
 import AdminPolicies from './admin/pages/Policies'
 import AdminServices from './admin/pages/Services'
+import SystemStatus from './admin/pages/SystemStatus'
 import ChatWidget from './shared/components/ChatWidget'
 // import Landing from './pages/Landing'
 
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/admin/approvals" element={<ProtectedRoute role="ADMIN"><AdminApprovals /></ProtectedRoute>} />
             <Route path="/admin/policies" element={<ProtectedRoute role="ADMIN"><AdminPolicies /></ProtectedRoute>} />
             <Route path="/admin/services" element={<ProtectedRoute role="ADMIN"><AdminServices /></ProtectedRoute>} />
+            <Route path="/admin/status" element={<ProtectedRoute role="ADMIN"><SystemStatus /></ProtectedRoute>} />
 
             <Route path="/chatbot" element={<Navigate to="/" replace />} />
 

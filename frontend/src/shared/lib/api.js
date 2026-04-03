@@ -11,7 +11,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && !err.config?.url?.includes('/api/auth/login')) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
@@ -91,8 +91,11 @@ export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/re
 export const markAllNotificationsRead = () => api.put('/api/notifications/read-all')
 
 // Admin
+export const getPolicy = (key) => api.get(`/api/admin/policies/${key}`)
 export const getPendingConsultants = () => api.get('/api/admin/consultants/pending')
 export const approveConsultant = (consultantId, data) =>
   api.post(`/api/admin/consultants/${consultantId}/approval`, data)
 export const updatePolicy = (key, data) => api.put(`/api/admin/policies/${key}`, data)
 export const createAdminService = (data) => api.post('/api/admin/services', data)
+export const getSystemStatus = () => api.get('/actuator/health')
+export const getAdminStats = () => api.get('/api/admin/stats')
