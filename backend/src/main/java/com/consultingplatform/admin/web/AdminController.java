@@ -41,19 +41,22 @@ public class AdminController {
     private final ConsultantRegistrationRepository consultantRegistrationRepository;
     private final UserRepository userRepository;
     private final ConsultingServiceService consultingServiceService;
+    private final com.consultingplatform.booking.repository.BookingRepository bookingRepository;
 
     public AdminController(
         ConsultantApprovalService consultantApprovalService,
         SystemPolicyService systemPolicyService,
         ConsultantRegistrationRepository consultantRegistrationRepository,
         UserRepository userRepository,
-        ConsultingServiceService consultingServiceService
+        ConsultingServiceService consultingServiceService,
+        com.consultingplatform.booking.repository.BookingRepository bookingRepository
     ) {
         this.consultantApprovalService = consultantApprovalService;
         this.systemPolicyService = systemPolicyService;
         this.consultantRegistrationRepository = consultantRegistrationRepository;
         this.userRepository = userRepository;
         this.consultingServiceService = consultingServiceService;
+        this.bookingRepository = bookingRepository;
     }
 
     @GetMapping("/services")
@@ -95,6 +98,13 @@ public class AdminController {
         return ResponseEntity.ok(consultantRegistrationRepository.findByStatus(ConsultantApprovalStatus.PENDING));
     }
 
+    @GetMapping("/policies/{policyKey}")
+    public ResponseEntity<PolicyResponseDto> getPolicy(@PathVariable String policyKey) {
+        return systemPolicyService.getPolicy(policyKey)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/policies/{policyKey}")
     public ResponseEntity<PolicyResponseDto> upsertPolicy(
         @PathVariable String policyKey,
@@ -105,15 +115,16 @@ public class AdminController {
         return ResponseEntity.status(status).body(result.getResponse());
     }
 
-    /**
-     * STUB: to be implemented — return real platform health and dependency status.
-     */
-    @GetMapping("/system/status")
-    public ResponseEntity<SystemStatusStubDto> getSystemStatusStub() {
-        return ResponseEntity.ok(new SystemStatusStubDto(
-            "UP",
-            true,
-            "STUB: replace with real system status aggregation"
-        ));
+    @GetMapping("/stats")
+    public ResponseEntity<java.util.Map<String, Object>> getAdminStats() {
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("totalConsultants", userRepository.countByRole("CONSULTANT"));
+        stats.put("totalClients", userRepository.countByRole("CLIENT"));
+        
+        stats.put("bookedAppointments", bookingRepository.countByStatus("PAID") + bookingRepository.countByStatus("COMPLETED"));
+        stats.put("appointmentsRequested", bookingRepository.countByStatus("REQUESTED"));
+        stats.put("appointmentsWaitingPayment", bookingRepository.countByStatus("CONFIRMED"));
+        
+        return ResponseEntity.ok(stats);
     }
 }

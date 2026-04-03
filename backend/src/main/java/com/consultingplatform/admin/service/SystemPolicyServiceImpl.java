@@ -54,6 +54,18 @@ public class SystemPolicyServiceImpl implements SystemPolicyService {
     }
 
     @Override
+    public Optional<PolicyResponseDto> getPolicy(String policyKey) {
+        if (isBlank(policyKey)) return Optional.empty();
+        String normalizedKey = policyKey.trim().toUpperCase();
+        return repository.findByPolicyKey(normalizedKey).map(saved -> new PolicyResponseDto(
+            saved.getPolicyKey(),
+            saved.getPolicyValue(),
+            saved.getUpdatedByAdminId(),
+            saved.getUpdatedAt()
+        ));
+    }
+
+    @Override
     public PolicyUpsertResult upsertPolicy(String policyKey, PolicyUpsertRequestDto request) {
         if (isBlank(policyKey)) {
             throw new IllegalArgumentException("policyKey is required");

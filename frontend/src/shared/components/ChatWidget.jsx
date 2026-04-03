@@ -48,7 +48,7 @@ export default function ChatWidget() {
   } ${isFullscreen ? 'max-w-[75%] px-4 py-3' : 'max-w-[80%] px-3 py-2'}`
 
   return (
-    <div className={`fixed z-50 flex flex-col gap-3 ${isFullscreen ? 'inset-0' : 'bottom-6 left-6 items-start'}`}>
+    <div className={`fixed z-50 flex flex-col gap-3 ${isFullscreen ? 'inset-0' : 'bottom-6 right-6 items-end'}`}>
       {/* Chat Panel */}
       {open && (
         <div className={panelWrapperClass}>
