@@ -62,10 +62,10 @@ This project uses three different databases depending on how you run it:
 3. **H2 (In-Memory Database):** A fake, temporary DB used **only for running automated tests**. Keeps tests fast and safe.
 
 ### 3. Running with Docker (Recommended)
-This method spins up both the **PostgreSQL database** and the **Spring Boot backend** inside isolated containers. You do not need to install Java or Postgres on your Mac.
+This method spins up the **PostgreSQL database**, the **Spring Boot backend**, and the **Vite React frontend** inside isolated containers. You do not need to install Java, Node, or Postgres on your Mac.
 
 ```bash
-# Build and start the backend and database
+# Build and start the backend, frontend, and database
 docker compose up --build
 
 # Stop the containers
@@ -74,7 +74,8 @@ docker compose down
 # Note: If you want to wipe the database clean, run:
 docker compose down -v
 ```
-*(The backend will be available at `http://localhost:8080`)*
+*(The backend API will be available at `http://localhost:8080`)*
+*(The frontend application will be available at `http://localhost:3000`)*
 
 ### 4. Running Locally (Without Docker)
 If you prefer to run the backend directly from IntelliJ/Eclipse or Terminal, you must provide it with a database:
@@ -94,6 +95,23 @@ Tests are automatically configured to use the **H2 In-Memory Database** (so they
 cd backend
 ./mvnw test
 ```
+
+### 6. AI Customer Assistant & Configuration
+The platform integrates an **AI Customer Assistant chatbot** (powered by Gemini) for helping clients navigate the consulting offerings.
+
+**Configuration Required (API Key):**
+For the chatbot (and AI-integrated features) to function in the backend, you must provide your **Gemini API Key**.
+1. Open or create a `.env` file at the root of your project directory (meaning at the same level as `docker-compose.yml`).
+2. Add your key like so:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+3. When running via `docker compose`, this key is automatically injected into the backend container. 
+
+**Accessing the Chatbot:**
+Once the full application (frontend + backend) is running:
+1. Open your browser and go to `http://localhost:3000` (the frontend application).
+2. The AI Customer Assistant is accessible via a Chat Widget / **Chatbot** page linked in the application navigation. Guests can use it to find answers and recommendations.
 
 ---
 
@@ -176,16 +194,12 @@ When a booking is loaded from the database, its status string is passed to the f
 | GET | `/api/payments/history/{clientId}` | Client payment history |
 | GET | `/api/users` | List all users |
 | POST | `/api/users` | Create a user `{ role, firstName, lastName, email, ... }` |
+| GET | `/api/admin/stats` | Get admin dashboard statistics |
+| GET | `/api/admin/system/status` | Get system status |
+| GET | `/api/admin/consultants/pending` | Get pending consultant registrations |
+| POST | `/api/admin/consultants/{id}/approval` | Approve or reject a consultant |
+| GET/PUT | `/api/admin/policies/{key}` | Get or update a system policy |
+| GET/POST/PUT/DELETE | `/api/admin/services` | Admin management for consulting services |
 
 ---
-
-## Team Member Contributions
-
-Contributions are visible from the Git commit history (`git log --oneline --all`).
-
-| Member | Commits | Primary Contributions |
-|--------|---------|-----------------------|
-| **Bhanu Rakshita Paul** | 31 | Project lead. User module with JPA inheritance (`Client`, `Consultant`, `Admin`). Admin module (consultant approval, system policies). Booking module refactoring and endpoint cleanup. Database schema design and migrations.  |
-| **Vansh Bhasin** | 30 |  Consultant availability slot management. Booking–payment integration. Docker and environment configuration. `ConsultingService` package refactoring. |
-| **Rudra (RD-1205)** | 7 | Payment module implementing Strategy Pattern (`CreditCardPayment`, `DebitCardPayment`, `PayPalPayment`, `BankTransferPayment`). End-to-end integration testing and seed data.PR reviews and merges. |
 
